@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { LIVEKIT_CLIENT_ENABLED, NETLIFY_SITE_NAME_CLIENT, REDIS_CLIENT_ENABLED, STRIPE_CLIENT_ENABLED } from "@/utils/featureFlags";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -314,6 +315,61 @@ export function FinanceSystem({ leagueId }: FinanceSystemProps) {
                   <div className="text-xs text-slate-400 mb-1">Total</div>
                   <div className="text-2xl font-bold text-white">
                     ${wallet.total.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-slate-400">Payment gateway</div>
+                      <div className="mt-1 text-sm text-white">
+                        {stripeEnabled ? "Stripe enabled" : "Stripe not configured"}
+                      </div>
+                    </div>
+                    <Badge variant={stripeEnabled ? "default" : "outline"}>
+                      {stripeEnabled ? "Active" : "Disabled"}
+                    </Badge>
+                  </div>
+
+                  {stripeEnabled ? (
+                    <div className="mt-3 flex flex-col gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        Stripe payments are available. Use the checkout buttons below to start a subscription flow.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => void startStripeCheckout("pro")} disabled={isStripeLoading}>
+                          {isStripeLoading ? "Starting checkout…" : "Upgrade to Pro"}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => void startStripeCheckout("enterprise")} disabled={isStripeLoading}>
+                          {isStripeLoading ? "Starting checkout…" : "Upgrade to Enterprise"}
+                        </Button>
+                      </div>
+                      {stripeError && <p className="text-xs text-red-400">{stripeError}</p>}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Add `VITE_STRIPE_PUBLISHABLE_KEY` to the front-end and `STRIPE_SECRET_KEY` plus `STRIPE_WEBHOOK_SECRET` to the server to enable Stripe.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                  <div className="text-xs text-slate-400">Platform services</div>
+                  <div className="mt-2 space-y-2 text-sm">
+                    <div>
+                      <span className="font-semibold">LiveKit:</span>{" "}
+                      {LIVEKIT_CLIENT_ENABLED ? "Configured for streaming" : "Offline fallback mode"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Redis:</span>{" "}
+                      {REDIS_CLIENT_ENABLED ? "Enabled" : "Disabled"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Site name:</span>{" "}
+                      {NETLIFY_SITE_NAME_CLIENT ?? "Default"}
+                    </div>
                   </div>
                 </div>
               </div>

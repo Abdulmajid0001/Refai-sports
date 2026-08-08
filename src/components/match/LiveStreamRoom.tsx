@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Video, VideoOff, Users } from "lucide-react";
 import { toast } from "sonner";
+import { LIVEKIT_CLIENT_ENABLED } from "@/utils/featureFlags";
 
 type Props = {
   matchId: string;
@@ -15,6 +16,7 @@ export function LiveStreamRoom({ matchId, role, name }: Props) {
   const [isLive, setIsLive] = useState(false);
   const [micOn, setMicOn] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
+  const liveKitEnabled = LIVEKIT_CLIENT_ENABLED;
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 

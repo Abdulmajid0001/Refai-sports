@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Mic, Send, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { LIVEKIT_CLIENT_ENABLED } from "@/utils/featureFlags";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ export function CommentatorBooth() {
     },
   });
   const authorName = profileQ.data?.display_name || user?.email?.split("@")[0] || "Commentator";
+  const liveKitEnabled = LIVEKIT_CLIENT_ENABLED;
 
   useEffect(() => {
     if (!user) return;
@@ -93,7 +95,9 @@ export function CommentatorBooth() {
       micStreamRef.current = s;
       if (audioRef.current) { audioRef.current.srcObject = s; audioRef.current.muted = true; }
       setMicOn(true);
-      toast.success("Mic active (local). Live audio streaming arrives with LiveKit.");
+      toast.success(
+        `Mic active (local). ${liveKitEnabled ? "Live audio streaming is available via LiveKit." : "LiveKit is not configured yet."}`
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Mic denied");
     }
@@ -137,7 +141,9 @@ export function CommentatorBooth() {
                 <Mic className="mr-1 h-4 w-4" />{micOn ? "Mic on" : "Activate mic"}
               </Button>
               <audio ref={audioRef} autoPlay />
-              <span className="text-xs text-muted-foreground">Audio capture ready — live audio broadcast to viewers requires LiveKit (next step).</span>
+              <span className="text-xs text-muted-foreground">
+                Audio capture ready — live audio broadcast to viewers {liveKitEnabled ? "is available via LiveKit." : "requires LiveKit configuration."}
+              </span>
             </div>
           </CardContent>
         </Card>

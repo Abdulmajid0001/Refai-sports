@@ -1,4 +1,5 @@
 import { Logo } from "@/components/brand/Logo";
+import { NETLIFY_SITE_NAME_CLIENT } from "@/utils/featureFlags";
 
 export function Footer() {
   return (
@@ -28,7 +29,9 @@ export function Footer() {
       <div className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-muted-foreground md:flex-row">
           <span>© {new Date().getFullYear()} Refai. All rights reserved.</span>
-          <span>Built for the game.</span>
+          <span>
+            Built for the game{NETLIFY_SITE_NAME_CLIENT ? ` — ${NETLIFY_SITE_NAME_CLIENT}` : "."}
+          </span>
         </div>
       </div>
     </footer>
