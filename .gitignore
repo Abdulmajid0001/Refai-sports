@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────
+#  RefAI — .gitignore
+#  Never commit secrets or generated files
+# ─────────────────────────────────────────────
+
+
+# ─── ENVIRONMENT VARIABLES (NEVER COMMIT) ────
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+
+
+# ─── DEPENDENCIES ────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+
+# ─── BUILD OUTPUT ────────────────────────────
+dist/
+dist-ssr/
+build/
+out/
+.output/
+
+
+# ─── VITE ────────────────────────────────────
+*.local
+vite.config.ts.timestamp-*
+
+
+# ─── SUPABASE LOCAL ──────────────────────────
+supabase/.branches
+supabase/.temp
+supabase/.env
+supabase/seed.sql
+
+
+# ─── LOGS ────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+livekit-debug.log*
+
+
+# ─── TESTING ─────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+
+# ─── EDITOR & OS FILES ───────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# ─── TYPESCRIPT ──────────────────────────────
+*.tsbuildinfo
+
+
+# ─── CACHE ───────────────────────────────────
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.cache
+
+
+# ─── PACKAGE MANAGERS ────────────────────────
+.npm
+.pnpm-store/
+
+
+# ─── NETLIFY ─────────────────────────────────
+.netlify/
+
+
+# ─── MISC ────────────────────────────────────
+*.zip
+*.tar.gz
+*.bak
+*.orig
+.temp/
+tmp/
+
+
+*_(1).ts
+*_(1).jpg
+temp.txt
