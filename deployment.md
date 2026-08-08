@@ -1,22 +1,50 @@
 # RefAI Sports Platform Deployment Guide
 
-## 1. Project overview
+## 1. Platform summary
 
-RefAI is a production-ready sports operating platform for AI-assisted officiating, live match streaming, commentary, competition management, team registration, viewer experience, moderation, and broadcast graphics.
+RefAI is a modern sports operating platform designed to deliver AI-assisted officiating, live match streaming, multi-commentator audio, competition management, and broadcast-grade graphics.
 
-The platform is designed to support:
-- Live football, basketball, volleyball and multi-sport match coverage
-- Team and player registration flows
-- League owner dashboards and competition management
-- Match moderator and referee consoles
-- Commentary and live audio updates
-- Broadcast graphics overlays and match announcements
-- AI referee assistance and basic match intelligence
-- Viewer match pages, live stats and timeline systems
-- Secure admin access with role-based controls
-- Monetization through ads and subscription monetization
+This repository is built with React, TypeScript, Vite, Tailwind CSS, TanStack Router, TanStack Query, Supabase, and Netlify Functions.
 
-This repository is built as a modern web application front end and a modular backend-ready architecture with existing Supabase integration, Netlify serverless functions, and a Vite-based React app.
+### What the site currently supports
+- League and team registration flows, including invite-based team onboarding
+- Role-based dashboards for league owners, team owners, coaches, moderators, commentators, viewers, and sponsors
+- Match viewer experience with live match pages, scoreboards, and event timelines
+- Referee console, moderator control center, commentator booth, and shared match highlight links
+- AI endpoint support via Netlify Functions for referee analysis, halftime reports, and match summaries
+- Legal, help, and public content pages for privacy, terms, and support
+- Dynamic page routing for `/matches`, `/matches/$id`, `/live/$matchId`, `/leagues/$slug`, `/teams/$slug`, `/referee/$matchId`, `/moderator/$matchId`, `/commentate/$matchId`, and `/share/match/$id`
+
+### Deployment readiness
+- `npm run build` succeeds in this repository
+- The route tree is generated automatically from `src/routes` into `src/routeTree.gen.ts`
+- The app includes a Netlify `_redirects` file for SPA routing
+- The app is ready for Netlify static hosting and serverless AI endpoints
+
+### Core platform goals
+- Allow leagues to manage competition structure, rules, schedules, teams, standings and broadcasts
+- Allow team owners and coaches to manage squads, player registration, formations, media and match submissions
+- Support referees and moderators controlling live match state, VAR reviews, replay clips and announcements
+- Provide viewers with live match access, highlights, predictions, chat, and fan engagement
+- Enable AI support where appropriate using serverless functions and OpenAI
+
+### Core technologies
+- React
+- Vite
+- TypeScript
+- Tailwind CSS
+- TanStack Router
+- TanStack Query
+- Radix UI
+- Supabase
+- Netlify Functions
+- OpenAI serverless endpoints
+
+### Optional production integrations
+- Redis for realtime caching and queue work
+- WebRTC / LiveKit for live media streaming
+- Cloud storage for media assets
+- CDN for image and video delivery
 
 ---
 
@@ -144,18 +172,28 @@ npm run preview
 
 ---
 
+## 5. App validation and connection checks
+
+Before deployment, verify that the app works and connects to its runtime services:
+- Run `npm install` and `npm run build` successfully.
+- Confirm `src/utils/client.ts` can read `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for client-side Supabase.
+- Confirm `src/utils/client.server.ts` can read `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for server-side operations.
+- Confirm Netlify functions in `netlify/functions/` can read `OPENAI_API_KEY`.
+- Verify that public route pages exist for `/legal/privacy`, `/legal/terms`, `/register/league`, `/register/team`, `/teams`, `/teams/$slug`, `/leagues/$slug`, `/matches`, `/matches/$id`, `/live/$matchId`, `/referee/$matchId`, `/moderator/$matchId`, `/commentate/$matchId`, and `/share/match/$id`.
+- Use `npm run preview` to ensure the SPA serves correctly and no route returns 404.
+
 ## 6. Environment variables
 
-Create a .env file in the project root with values similar to the following:
+Create a `.env` file in the project root with values similar to the following:
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-VITE_OPENAI_API_KEY=your-openai-key
+OPENAI_API_KEY=your-openai-key
 STRIPE_SECRET_KEY=sk_live_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
-STRIPE_PUBLISHABLE_KEY=pk_live_xxx
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
 ```
 
@@ -168,7 +206,7 @@ LIVEKIT_API_SECRET=your-livekit-secret
 NETLIFY_SITE_NAME=refai-platform
 ```
 
-> The current front-end uses the Supabase client from `src/integrations/supabase/client.ts` and expects the Supabase environment variables to be defined.
+> The current front-end uses `src/utils/client.ts` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Server-side functions and administrative operations use `src/utils/client.server.ts` with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 
 ---
 
@@ -282,15 +320,18 @@ dist
 Set the same environment variables from `.env` in the Netlify project settings:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `VITE_STRIPE_PUBLISHABLE_KEY`
-- `VITE_OPENAI_API_KEY`
 
 ### Netlify functions
 The project already includes serverless function files under:
 - `netlify/functions/`
+
+These functions use the OpenAI API key and may also use Supabase service-role credentials for secure server-side operations.
 
 If additional backend features are required, they can be extended there.
 

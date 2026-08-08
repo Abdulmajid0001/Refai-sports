@@ -266,7 +266,7 @@ export function ModeratorControlCenter() {
             <span className="ml-2 text-sm text-white/50">{minute}{extra ? `+${extra}` : ""}'</span>
           </div>
           <Button asChild size="sm" variant="outline" className="border-amber-800 text-amber-300">
-            <Link to="/var/$matchId" params={{ matchId }}>VAR Page</Link>
+            <Link to="/referee/$matchId" params={{ matchId }}>Referee / VAR Console</Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="border-amber-800 text-amber-300">
             <Link to="/live/$matchId" params={{ matchId }}>Viewer Page</Link>

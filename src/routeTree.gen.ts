@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeamsRouteImport } from './routes/teams'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as LeaguesRouteImport } from './routes/leagues'
 import { Route as HelpRouteImport } from './routes/help'
@@ -21,10 +22,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MatchesIndexRouteImport } from './routes/matches/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as TeamsSlugRouteImport } from './routes/teams.$slug'
+import { Route as RegisterTeamRouteImport } from './routes/register/team'
+import { Route as RegisterLeagueRouteImport } from './routes/register/league'
 import { Route as RefereeMatchIdRouteImport } from './routes/referee.$matchId'
 import { Route as ModeratorMatchIdRouteImport } from './routes/moderator.$matchId'
 import { Route as MatchesIdRouteImport } from './routes/matches/$id'
 import { Route as LiveMatchIdRouteImport } from './routes/live.$matchId'
+import { Route as LegalTermsRouteImport } from './routes/legal/terms'
+import { Route as LegalPrivacyRouteImport } from './routes/legal/privacy'
 import { Route as LeaguesSlugRouteImport } from './routes/leagues.$slug'
 import { Route as DashboardViewerRouteImport } from './routes/dashboard/viewer'
 import { Route as DashboardTeamsRouteImport } from './routes/dashboard/teams'
@@ -43,7 +49,26 @@ import { Route as AdminSlideshowRouteImport } from './routes/admin/slideshow'
 import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminModerationRouteImport } from './routes/admin/moderation'
 import { Route as AdminAdsRouteImport } from './routes/admin/ads'
+import { Route as ShareMatchIdRouteImport } from './routes/share/match/$id'
+import { Route as DashboardViewerProfileRouteImport } from './routes/dashboard/viewer/profile'
+import { Route as DashboardViewerPredictionsRouteImport } from './routes/dashboard/viewer/predictions'
+import { Route as DashboardViewerHighlightsRouteImport } from './routes/dashboard/viewer/highlights'
+import { Route as DashboardViewerFollowingRouteImport } from './routes/dashboard/viewer/following'
+import { Route as DashboardViewerChatRouteImport } from './routes/dashboard/viewer/chat'
+import { Route as DashboardTeamSquadRouteImport } from './routes/dashboard/team/squad'
 import { Route as DashboardTeamRegisterRouteImport } from './routes/dashboard/team/register'
+import { Route as DashboardTeamProfileRouteImport } from './routes/dashboard/team/profile'
+import { Route as DashboardTeamMediaRouteImport } from './routes/dashboard/team/media'
+import { Route as DashboardTeamMatchesRouteImport } from './routes/dashboard/team/matches'
+import { Route as DashboardTeamFormationsRouteImport } from './routes/dashboard/team/formations'
+import { Route as DashboardModeratorVarRouteImport } from './routes/dashboard/moderator/var'
+import { Route as DashboardModeratorStatisticsRouteImport } from './routes/dashboard/moderator/statistics'
+import { Route as DashboardModeratorReplayRouteImport } from './routes/dashboard/moderator/replay'
+import { Route as DashboardModeratorGraphicsRouteImport } from './routes/dashboard/moderator/graphics'
+import { Route as DashboardModeratorEventsRouteImport } from './routes/dashboard/moderator/events'
+import { Route as DashboardModeratorCamerasRouteImport } from './routes/dashboard/moderator/cameras'
+import { Route as DashboardModeratorBroadcastRouteImport } from './routes/dashboard/moderator/broadcast'
+import { Route as DashboardModeratorAnnouncementsRouteImport } from './routes/dashboard/moderator/announcements'
 import { Route as DashboardLeagueWalletRouteImport } from './routes/dashboard/league/wallet'
 import { Route as DashboardLeagueTeamsRouteImport } from './routes/dashboard/league/teams'
 import { Route as DashboardLeagueSettingsRouteImport } from './routes/dashboard/league/settings'
@@ -53,8 +78,21 @@ import { Route as DashboardLeagueModeratorsRouteImport } from './routes/dashboar
 import { Route as DashboardLeagueMatchesRouteImport } from './routes/dashboard/league/matches'
 import { Route as DashboardLeagueBroadcastRouteImport } from './routes/dashboard/league/broadcast'
 import { Route as DashboardLeagueLeagueIdRouteImport } from './routes/dashboard/league/$leagueId'
+import { Route as DashboardCoachTrainingRouteImport } from './routes/dashboard/coach/training'
+import { Route as DashboardCoachTacticsRouteImport } from './routes/dashboard/coach/tactics'
+import { Route as DashboardCoachSquadRouteImport } from './routes/dashboard/coach/squad'
+import { Route as DashboardCoachPerformanceRouteImport } from './routes/dashboard/coach/performance'
+import { Route as DashboardCoachMedicalRouteImport } from './routes/dashboard/coach/medical'
+import { Route as DashboardCoachMatchesRouteImport } from './routes/dashboard/coach/matches'
+import { Route as DashboardCoachLineupsRouteImport } from './routes/dashboard/coach/lineups'
+import { Route as DashboardCoachFormationsRouteImport } from './routes/dashboard/coach/formations'
 import { Route as DashboardTeamPlayersRegisterRouteImport } from './routes/dashboard/team/players/register'
 
+const TeamsRoute = TeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveRoute = LiveRouteImport.update({
   id: '/live',
   path: '/live',
@@ -115,6 +153,21 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const TeamsSlugRoute = TeamsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => TeamsRoute,
+} as any)
+const RegisterTeamRoute = RegisterTeamRouteImport.update({
+  id: '/register/team',
+  path: '/register/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterLeagueRoute = RegisterLeagueRouteImport.update({
+  id: '/register/league',
+  path: '/register/league',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RefereeMatchIdRoute = RefereeMatchIdRouteImport.update({
   id: '/referee/$matchId',
   path: '/referee/$matchId',
@@ -134,6 +187,16 @@ const LiveMatchIdRoute = LiveMatchIdRouteImport.update({
   id: '/$matchId',
   path: '/$matchId',
   getParentRoute: () => LiveRoute,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LeaguesSlugRoute = LeaguesSlugRouteImport.update({
   id: '/$slug',
@@ -225,11 +288,116 @@ const AdminAdsRoute = AdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AdminRoute,
 } as any)
+const ShareMatchIdRoute = ShareMatchIdRouteImport.update({
+  id: '/share/match/$id',
+  path: '/share/match/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardViewerProfileRoute = DashboardViewerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardViewerRoute,
+} as any)
+const DashboardViewerPredictionsRoute =
+  DashboardViewerPredictionsRouteImport.update({
+    id: '/predictions',
+    path: '/predictions',
+    getParentRoute: () => DashboardViewerRoute,
+  } as any)
+const DashboardViewerHighlightsRoute =
+  DashboardViewerHighlightsRouteImport.update({
+    id: '/highlights',
+    path: '/highlights',
+    getParentRoute: () => DashboardViewerRoute,
+  } as any)
+const DashboardViewerFollowingRoute =
+  DashboardViewerFollowingRouteImport.update({
+    id: '/following',
+    path: '/following',
+    getParentRoute: () => DashboardViewerRoute,
+  } as any)
+const DashboardViewerChatRoute = DashboardViewerChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => DashboardViewerRoute,
+} as any)
+const DashboardTeamSquadRoute = DashboardTeamSquadRouteImport.update({
+  id: '/squad',
+  path: '/squad',
+  getParentRoute: () => DashboardTeamRoute,
+} as any)
 const DashboardTeamRegisterRoute = DashboardTeamRegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => DashboardTeamRoute,
 } as any)
+const DashboardTeamProfileRoute = DashboardTeamProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardTeamRoute,
+} as any)
+const DashboardTeamMediaRoute = DashboardTeamMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => DashboardTeamRoute,
+} as any)
+const DashboardTeamMatchesRoute = DashboardTeamMatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
+  getParentRoute: () => DashboardTeamRoute,
+} as any)
+const DashboardTeamFormationsRoute = DashboardTeamFormationsRouteImport.update({
+  id: '/formations',
+  path: '/formations',
+  getParentRoute: () => DashboardTeamRoute,
+} as any)
+const DashboardModeratorVarRoute = DashboardModeratorVarRouteImport.update({
+  id: '/var',
+  path: '/var',
+  getParentRoute: () => DashboardModeratorRoute,
+} as any)
+const DashboardModeratorStatisticsRoute =
+  DashboardModeratorStatisticsRouteImport.update({
+    id: '/statistics',
+    path: '/statistics',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
+const DashboardModeratorReplayRoute =
+  DashboardModeratorReplayRouteImport.update({
+    id: '/replay',
+    path: '/replay',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
+const DashboardModeratorGraphicsRoute =
+  DashboardModeratorGraphicsRouteImport.update({
+    id: '/graphics',
+    path: '/graphics',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
+const DashboardModeratorEventsRoute =
+  DashboardModeratorEventsRouteImport.update({
+    id: '/events',
+    path: '/events',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
+const DashboardModeratorCamerasRoute =
+  DashboardModeratorCamerasRouteImport.update({
+    id: '/cameras',
+    path: '/cameras',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
+const DashboardModeratorBroadcastRoute =
+  DashboardModeratorBroadcastRouteImport.update({
+    id: '/broadcast',
+    path: '/broadcast',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
+const DashboardModeratorAnnouncementsRoute =
+  DashboardModeratorAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => DashboardModeratorRoute,
+  } as any)
 const DashboardLeagueWalletRoute = DashboardLeagueWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -277,6 +445,48 @@ const DashboardLeagueLeagueIdRoute = DashboardLeagueLeagueIdRouteImport.update({
   path: '/$leagueId',
   getParentRoute: () => DashboardLeagueRoute,
 } as any)
+const DashboardCoachTrainingRoute = DashboardCoachTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => DashboardCoachRoute,
+} as any)
+const DashboardCoachTacticsRoute = DashboardCoachTacticsRouteImport.update({
+  id: '/tactics',
+  path: '/tactics',
+  getParentRoute: () => DashboardCoachRoute,
+} as any)
+const DashboardCoachSquadRoute = DashboardCoachSquadRouteImport.update({
+  id: '/squad',
+  path: '/squad',
+  getParentRoute: () => DashboardCoachRoute,
+} as any)
+const DashboardCoachPerformanceRoute =
+  DashboardCoachPerformanceRouteImport.update({
+    id: '/performance',
+    path: '/performance',
+    getParentRoute: () => DashboardCoachRoute,
+  } as any)
+const DashboardCoachMedicalRoute = DashboardCoachMedicalRouteImport.update({
+  id: '/medical',
+  path: '/medical',
+  getParentRoute: () => DashboardCoachRoute,
+} as any)
+const DashboardCoachMatchesRoute = DashboardCoachMatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
+  getParentRoute: () => DashboardCoachRoute,
+} as any)
+const DashboardCoachLineupsRoute = DashboardCoachLineupsRouteImport.update({
+  id: '/lineups',
+  path: '/lineups',
+  getParentRoute: () => DashboardCoachRoute,
+} as any)
+const DashboardCoachFormationsRoute =
+  DashboardCoachFormationsRouteImport.update({
+    id: '/formations',
+    path: '/formations',
+    getParentRoute: () => DashboardCoachRoute,
+  } as any)
 const DashboardTeamPlayersRegisterRoute =
   DashboardTeamPlayersRegisterRouteImport.update({
     id: '/players/register',
@@ -294,6 +504,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/leagues': typeof LeaguesRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/teams': typeof TeamsRouteWithChildren
   '/admin/ads': typeof AdminAdsRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -302,23 +513,36 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/commentate/$matchId': typeof CommentateMatchIdRoute
   '/dashboard/camera': typeof DashboardCameraRoute
-  '/dashboard/coach': typeof DashboardCoachRoute
+  '/dashboard/coach': typeof DashboardCoachRouteWithChildren
   '/dashboard/commentator': typeof DashboardCommentatorRoute
   '/dashboard/league': typeof DashboardLeagueRouteWithChildren
   '/dashboard/leagues': typeof DashboardLeaguesRoute
-  '/dashboard/moderator': typeof DashboardModeratorRoute
+  '/dashboard/moderator': typeof DashboardModeratorRouteWithChildren
   '/dashboard/sponsor': typeof DashboardSponsorRoute
   '/dashboard/team': typeof DashboardTeamRouteWithChildren
   '/dashboard/teams': typeof DashboardTeamsRoute
-  '/dashboard/viewer': typeof DashboardViewerRoute
+  '/dashboard/viewer': typeof DashboardViewerRouteWithChildren
   '/leagues/$slug': typeof LeaguesSlugRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/live/$matchId': typeof LiveMatchIdRoute
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
+  '/register/league': typeof RegisterLeagueRoute
+  '/register/team': typeof RegisterTeamRoute
+  '/teams/$slug': typeof TeamsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/matches/': typeof MatchesIndexRoute
+  '/dashboard/coach/formations': typeof DashboardCoachFormationsRoute
+  '/dashboard/coach/lineups': typeof DashboardCoachLineupsRoute
+  '/dashboard/coach/matches': typeof DashboardCoachMatchesRoute
+  '/dashboard/coach/medical': typeof DashboardCoachMedicalRoute
+  '/dashboard/coach/performance': typeof DashboardCoachPerformanceRoute
+  '/dashboard/coach/squad': typeof DashboardCoachSquadRoute
+  '/dashboard/coach/tactics': typeof DashboardCoachTacticsRoute
+  '/dashboard/coach/training': typeof DashboardCoachTrainingRoute
   '/dashboard/league/$leagueId': typeof DashboardLeagueLeagueIdRoute
   '/dashboard/league/broadcast': typeof DashboardLeagueBroadcastRoute
   '/dashboard/league/matches': typeof DashboardLeagueMatchesRoute
@@ -328,7 +552,26 @@ export interface FileRoutesByFullPath {
   '/dashboard/league/settings': typeof DashboardLeagueSettingsRoute
   '/dashboard/league/teams': typeof DashboardLeagueTeamsRoute
   '/dashboard/league/wallet': typeof DashboardLeagueWalletRoute
+  '/dashboard/moderator/announcements': typeof DashboardModeratorAnnouncementsRoute
+  '/dashboard/moderator/broadcast': typeof DashboardModeratorBroadcastRoute
+  '/dashboard/moderator/cameras': typeof DashboardModeratorCamerasRoute
+  '/dashboard/moderator/events': typeof DashboardModeratorEventsRoute
+  '/dashboard/moderator/graphics': typeof DashboardModeratorGraphicsRoute
+  '/dashboard/moderator/replay': typeof DashboardModeratorReplayRoute
+  '/dashboard/moderator/statistics': typeof DashboardModeratorStatisticsRoute
+  '/dashboard/moderator/var': typeof DashboardModeratorVarRoute
+  '/dashboard/team/formations': typeof DashboardTeamFormationsRoute
+  '/dashboard/team/matches': typeof DashboardTeamMatchesRoute
+  '/dashboard/team/media': typeof DashboardTeamMediaRoute
+  '/dashboard/team/profile': typeof DashboardTeamProfileRoute
   '/dashboard/team/register': typeof DashboardTeamRegisterRoute
+  '/dashboard/team/squad': typeof DashboardTeamSquadRoute
+  '/dashboard/viewer/chat': typeof DashboardViewerChatRoute
+  '/dashboard/viewer/following': typeof DashboardViewerFollowingRoute
+  '/dashboard/viewer/highlights': typeof DashboardViewerHighlightsRoute
+  '/dashboard/viewer/predictions': typeof DashboardViewerPredictionsRoute
+  '/dashboard/viewer/profile': typeof DashboardViewerProfileRoute
+  '/share/match/$id': typeof ShareMatchIdRoute
   '/dashboard/team/players/register': typeof DashboardTeamPlayersRegisterRoute
 }
 export interface FileRoutesByTo {
@@ -339,6 +582,7 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/leagues': typeof LeaguesRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/teams': typeof TeamsRouteWithChildren
   '/admin/ads': typeof AdminAdsRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -347,23 +591,36 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/commentate/$matchId': typeof CommentateMatchIdRoute
   '/dashboard/camera': typeof DashboardCameraRoute
-  '/dashboard/coach': typeof DashboardCoachRoute
+  '/dashboard/coach': typeof DashboardCoachRouteWithChildren
   '/dashboard/commentator': typeof DashboardCommentatorRoute
   '/dashboard/league': typeof DashboardLeagueRouteWithChildren
   '/dashboard/leagues': typeof DashboardLeaguesRoute
-  '/dashboard/moderator': typeof DashboardModeratorRoute
+  '/dashboard/moderator': typeof DashboardModeratorRouteWithChildren
   '/dashboard/sponsor': typeof DashboardSponsorRoute
   '/dashboard/team': typeof DashboardTeamRouteWithChildren
   '/dashboard/teams': typeof DashboardTeamsRoute
-  '/dashboard/viewer': typeof DashboardViewerRoute
+  '/dashboard/viewer': typeof DashboardViewerRouteWithChildren
   '/leagues/$slug': typeof LeaguesSlugRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/live/$matchId': typeof LiveMatchIdRoute
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
+  '/register/league': typeof RegisterLeagueRoute
+  '/register/team': typeof RegisterTeamRoute
+  '/teams/$slug': typeof TeamsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/matches': typeof MatchesIndexRoute
+  '/dashboard/coach/formations': typeof DashboardCoachFormationsRoute
+  '/dashboard/coach/lineups': typeof DashboardCoachLineupsRoute
+  '/dashboard/coach/matches': typeof DashboardCoachMatchesRoute
+  '/dashboard/coach/medical': typeof DashboardCoachMedicalRoute
+  '/dashboard/coach/performance': typeof DashboardCoachPerformanceRoute
+  '/dashboard/coach/squad': typeof DashboardCoachSquadRoute
+  '/dashboard/coach/tactics': typeof DashboardCoachTacticsRoute
+  '/dashboard/coach/training': typeof DashboardCoachTrainingRoute
   '/dashboard/league/$leagueId': typeof DashboardLeagueLeagueIdRoute
   '/dashboard/league/broadcast': typeof DashboardLeagueBroadcastRoute
   '/dashboard/league/matches': typeof DashboardLeagueMatchesRoute
@@ -373,7 +630,26 @@ export interface FileRoutesByTo {
   '/dashboard/league/settings': typeof DashboardLeagueSettingsRoute
   '/dashboard/league/teams': typeof DashboardLeagueTeamsRoute
   '/dashboard/league/wallet': typeof DashboardLeagueWalletRoute
+  '/dashboard/moderator/announcements': typeof DashboardModeratorAnnouncementsRoute
+  '/dashboard/moderator/broadcast': typeof DashboardModeratorBroadcastRoute
+  '/dashboard/moderator/cameras': typeof DashboardModeratorCamerasRoute
+  '/dashboard/moderator/events': typeof DashboardModeratorEventsRoute
+  '/dashboard/moderator/graphics': typeof DashboardModeratorGraphicsRoute
+  '/dashboard/moderator/replay': typeof DashboardModeratorReplayRoute
+  '/dashboard/moderator/statistics': typeof DashboardModeratorStatisticsRoute
+  '/dashboard/moderator/var': typeof DashboardModeratorVarRoute
+  '/dashboard/team/formations': typeof DashboardTeamFormationsRoute
+  '/dashboard/team/matches': typeof DashboardTeamMatchesRoute
+  '/dashboard/team/media': typeof DashboardTeamMediaRoute
+  '/dashboard/team/profile': typeof DashboardTeamProfileRoute
   '/dashboard/team/register': typeof DashboardTeamRegisterRoute
+  '/dashboard/team/squad': typeof DashboardTeamSquadRoute
+  '/dashboard/viewer/chat': typeof DashboardViewerChatRoute
+  '/dashboard/viewer/following': typeof DashboardViewerFollowingRoute
+  '/dashboard/viewer/highlights': typeof DashboardViewerHighlightsRoute
+  '/dashboard/viewer/predictions': typeof DashboardViewerPredictionsRoute
+  '/dashboard/viewer/profile': typeof DashboardViewerProfileRoute
+  '/share/match/$id': typeof ShareMatchIdRoute
   '/dashboard/team/players/register': typeof DashboardTeamPlayersRegisterRoute
 }
 export interface FileRoutesById {
@@ -387,6 +663,7 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/leagues': typeof LeaguesRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/teams': typeof TeamsRouteWithChildren
   '/admin/ads': typeof AdminAdsRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -395,23 +672,36 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/commentate/$matchId': typeof CommentateMatchIdRoute
   '/dashboard/camera': typeof DashboardCameraRoute
-  '/dashboard/coach': typeof DashboardCoachRoute
+  '/dashboard/coach': typeof DashboardCoachRouteWithChildren
   '/dashboard/commentator': typeof DashboardCommentatorRoute
   '/dashboard/league': typeof DashboardLeagueRouteWithChildren
   '/dashboard/leagues': typeof DashboardLeaguesRoute
-  '/dashboard/moderator': typeof DashboardModeratorRoute
+  '/dashboard/moderator': typeof DashboardModeratorRouteWithChildren
   '/dashboard/sponsor': typeof DashboardSponsorRoute
   '/dashboard/team': typeof DashboardTeamRouteWithChildren
   '/dashboard/teams': typeof DashboardTeamsRoute
-  '/dashboard/viewer': typeof DashboardViewerRoute
+  '/dashboard/viewer': typeof DashboardViewerRouteWithChildren
   '/leagues/$slug': typeof LeaguesSlugRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/live/$matchId': typeof LiveMatchIdRoute
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
+  '/register/league': typeof RegisterLeagueRoute
+  '/register/team': typeof RegisterTeamRoute
+  '/teams/$slug': typeof TeamsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/matches/': typeof MatchesIndexRoute
+  '/dashboard/coach/formations': typeof DashboardCoachFormationsRoute
+  '/dashboard/coach/lineups': typeof DashboardCoachLineupsRoute
+  '/dashboard/coach/matches': typeof DashboardCoachMatchesRoute
+  '/dashboard/coach/medical': typeof DashboardCoachMedicalRoute
+  '/dashboard/coach/performance': typeof DashboardCoachPerformanceRoute
+  '/dashboard/coach/squad': typeof DashboardCoachSquadRoute
+  '/dashboard/coach/tactics': typeof DashboardCoachTacticsRoute
+  '/dashboard/coach/training': typeof DashboardCoachTrainingRoute
   '/dashboard/league/$leagueId': typeof DashboardLeagueLeagueIdRoute
   '/dashboard/league/broadcast': typeof DashboardLeagueBroadcastRoute
   '/dashboard/league/matches': typeof DashboardLeagueMatchesRoute
@@ -421,7 +711,26 @@ export interface FileRoutesById {
   '/dashboard/league/settings': typeof DashboardLeagueSettingsRoute
   '/dashboard/league/teams': typeof DashboardLeagueTeamsRoute
   '/dashboard/league/wallet': typeof DashboardLeagueWalletRoute
+  '/dashboard/moderator/announcements': typeof DashboardModeratorAnnouncementsRoute
+  '/dashboard/moderator/broadcast': typeof DashboardModeratorBroadcastRoute
+  '/dashboard/moderator/cameras': typeof DashboardModeratorCamerasRoute
+  '/dashboard/moderator/events': typeof DashboardModeratorEventsRoute
+  '/dashboard/moderator/graphics': typeof DashboardModeratorGraphicsRoute
+  '/dashboard/moderator/replay': typeof DashboardModeratorReplayRoute
+  '/dashboard/moderator/statistics': typeof DashboardModeratorStatisticsRoute
+  '/dashboard/moderator/var': typeof DashboardModeratorVarRoute
+  '/dashboard/team/formations': typeof DashboardTeamFormationsRoute
+  '/dashboard/team/matches': typeof DashboardTeamMatchesRoute
+  '/dashboard/team/media': typeof DashboardTeamMediaRoute
+  '/dashboard/team/profile': typeof DashboardTeamProfileRoute
   '/dashboard/team/register': typeof DashboardTeamRegisterRoute
+  '/dashboard/team/squad': typeof DashboardTeamSquadRoute
+  '/dashboard/viewer/chat': typeof DashboardViewerChatRoute
+  '/dashboard/viewer/following': typeof DashboardViewerFollowingRoute
+  '/dashboard/viewer/highlights': typeof DashboardViewerHighlightsRoute
+  '/dashboard/viewer/predictions': typeof DashboardViewerPredictionsRoute
+  '/dashboard/viewer/profile': typeof DashboardViewerProfileRoute
+  '/share/match/$id': typeof ShareMatchIdRoute
   '/dashboard/team/players/register': typeof DashboardTeamPlayersRegisterRoute
 }
 export interface FileRouteTypes {
@@ -436,6 +745,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/leagues'
     | '/live'
+    | '/teams'
     | '/admin/ads'
     | '/admin/moderation'
     | '/admin/payments'
@@ -454,13 +764,26 @@ export interface FileRouteTypes {
     | '/dashboard/teams'
     | '/dashboard/viewer'
     | '/leagues/$slug'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/live/$matchId'
     | '/matches/$id'
     | '/moderator/$matchId'
     | '/referee/$matchId'
+    | '/register/league'
+    | '/register/team'
+    | '/teams/$slug'
     | '/admin/'
     | '/dashboard/'
     | '/matches/'
+    | '/dashboard/coach/formations'
+    | '/dashboard/coach/lineups'
+    | '/dashboard/coach/matches'
+    | '/dashboard/coach/medical'
+    | '/dashboard/coach/performance'
+    | '/dashboard/coach/squad'
+    | '/dashboard/coach/tactics'
+    | '/dashboard/coach/training'
     | '/dashboard/league/$leagueId'
     | '/dashboard/league/broadcast'
     | '/dashboard/league/matches'
@@ -470,7 +793,26 @@ export interface FileRouteTypes {
     | '/dashboard/league/settings'
     | '/dashboard/league/teams'
     | '/dashboard/league/wallet'
+    | '/dashboard/moderator/announcements'
+    | '/dashboard/moderator/broadcast'
+    | '/dashboard/moderator/cameras'
+    | '/dashboard/moderator/events'
+    | '/dashboard/moderator/graphics'
+    | '/dashboard/moderator/replay'
+    | '/dashboard/moderator/statistics'
+    | '/dashboard/moderator/var'
+    | '/dashboard/team/formations'
+    | '/dashboard/team/matches'
+    | '/dashboard/team/media'
+    | '/dashboard/team/profile'
     | '/dashboard/team/register'
+    | '/dashboard/team/squad'
+    | '/dashboard/viewer/chat'
+    | '/dashboard/viewer/following'
+    | '/dashboard/viewer/highlights'
+    | '/dashboard/viewer/predictions'
+    | '/dashboard/viewer/profile'
+    | '/share/match/$id'
     | '/dashboard/team/players/register'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -481,6 +823,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/leagues'
     | '/live'
+    | '/teams'
     | '/admin/ads'
     | '/admin/moderation'
     | '/admin/payments'
@@ -499,13 +842,26 @@ export interface FileRouteTypes {
     | '/dashboard/teams'
     | '/dashboard/viewer'
     | '/leagues/$slug'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/live/$matchId'
     | '/matches/$id'
     | '/moderator/$matchId'
     | '/referee/$matchId'
+    | '/register/league'
+    | '/register/team'
+    | '/teams/$slug'
     | '/admin'
     | '/dashboard'
     | '/matches'
+    | '/dashboard/coach/formations'
+    | '/dashboard/coach/lineups'
+    | '/dashboard/coach/matches'
+    | '/dashboard/coach/medical'
+    | '/dashboard/coach/performance'
+    | '/dashboard/coach/squad'
+    | '/dashboard/coach/tactics'
+    | '/dashboard/coach/training'
     | '/dashboard/league/$leagueId'
     | '/dashboard/league/broadcast'
     | '/dashboard/league/matches'
@@ -515,7 +871,26 @@ export interface FileRouteTypes {
     | '/dashboard/league/settings'
     | '/dashboard/league/teams'
     | '/dashboard/league/wallet'
+    | '/dashboard/moderator/announcements'
+    | '/dashboard/moderator/broadcast'
+    | '/dashboard/moderator/cameras'
+    | '/dashboard/moderator/events'
+    | '/dashboard/moderator/graphics'
+    | '/dashboard/moderator/replay'
+    | '/dashboard/moderator/statistics'
+    | '/dashboard/moderator/var'
+    | '/dashboard/team/formations'
+    | '/dashboard/team/matches'
+    | '/dashboard/team/media'
+    | '/dashboard/team/profile'
     | '/dashboard/team/register'
+    | '/dashboard/team/squad'
+    | '/dashboard/viewer/chat'
+    | '/dashboard/viewer/following'
+    | '/dashboard/viewer/highlights'
+    | '/dashboard/viewer/predictions'
+    | '/dashboard/viewer/profile'
+    | '/share/match/$id'
     | '/dashboard/team/players/register'
   id:
     | '__root__'
@@ -528,6 +903,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/leagues'
     | '/live'
+    | '/teams'
     | '/admin/ads'
     | '/admin/moderation'
     | '/admin/payments'
@@ -546,13 +922,26 @@ export interface FileRouteTypes {
     | '/dashboard/teams'
     | '/dashboard/viewer'
     | '/leagues/$slug'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/live/$matchId'
     | '/matches/$id'
     | '/moderator/$matchId'
     | '/referee/$matchId'
+    | '/register/league'
+    | '/register/team'
+    | '/teams/$slug'
     | '/admin/'
     | '/dashboard/'
     | '/matches/'
+    | '/dashboard/coach/formations'
+    | '/dashboard/coach/lineups'
+    | '/dashboard/coach/matches'
+    | '/dashboard/coach/medical'
+    | '/dashboard/coach/performance'
+    | '/dashboard/coach/squad'
+    | '/dashboard/coach/tactics'
+    | '/dashboard/coach/training'
     | '/dashboard/league/$leagueId'
     | '/dashboard/league/broadcast'
     | '/dashboard/league/matches'
@@ -562,7 +951,26 @@ export interface FileRouteTypes {
     | '/dashboard/league/settings'
     | '/dashboard/league/teams'
     | '/dashboard/league/wallet'
+    | '/dashboard/moderator/announcements'
+    | '/dashboard/moderator/broadcast'
+    | '/dashboard/moderator/cameras'
+    | '/dashboard/moderator/events'
+    | '/dashboard/moderator/graphics'
+    | '/dashboard/moderator/replay'
+    | '/dashboard/moderator/statistics'
+    | '/dashboard/moderator/var'
+    | '/dashboard/team/formations'
+    | '/dashboard/team/matches'
+    | '/dashboard/team/media'
+    | '/dashboard/team/profile'
     | '/dashboard/team/register'
+    | '/dashboard/team/squad'
+    | '/dashboard/viewer/chat'
+    | '/dashboard/viewer/following'
+    | '/dashboard/viewer/highlights'
+    | '/dashboard/viewer/predictions'
+    | '/dashboard/viewer/profile'
+    | '/share/match/$id'
     | '/dashboard/team/players/register'
   fileRoutesById: FileRoutesById
 }
@@ -576,15 +984,28 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   LeaguesRoute: typeof LeaguesRouteWithChildren
   LiveRoute: typeof LiveRouteWithChildren
+  TeamsRoute: typeof TeamsRouteWithChildren
   CommentateMatchIdRoute: typeof CommentateMatchIdRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
   MatchesIdRoute: typeof MatchesIdRoute
   ModeratorMatchIdRoute: typeof ModeratorMatchIdRoute
   RefereeMatchIdRoute: typeof RefereeMatchIdRoute
+  RegisterLeagueRoute: typeof RegisterLeagueRoute
+  RegisterTeamRoute: typeof RegisterTeamRoute
   MatchesIndexRoute: typeof MatchesIndexRoute
+  ShareMatchIdRoute: typeof ShareMatchIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/teams': {
+      id: '/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof TeamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live': {
       id: '/live'
       path: '/live'
@@ -669,6 +1090,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/teams/$slug': {
+      id: '/teams/$slug'
+      path: '/$slug'
+      fullPath: '/teams/$slug'
+      preLoaderRoute: typeof TeamsSlugRouteImport
+      parentRoute: typeof TeamsRoute
+    }
+    '/register/team': {
+      id: '/register/team'
+      path: '/register/team'
+      fullPath: '/register/team'
+      preLoaderRoute: typeof RegisterTeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register/league': {
+      id: '/register/league'
+      path: '/register/league'
+      fullPath: '/register/league'
+      preLoaderRoute: typeof RegisterLeagueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/referee/$matchId': {
       id: '/referee/$matchId'
       path: '/referee/$matchId'
@@ -696,6 +1138,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/live/$matchId'
       preLoaderRoute: typeof LiveMatchIdRouteImport
       parentRoute: typeof LiveRoute
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/leagues/$slug': {
       id: '/leagues/$slug'
@@ -823,12 +1279,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/share/match/$id': {
+      id: '/share/match/$id'
+      path: '/share/match/$id'
+      fullPath: '/share/match/$id'
+      preLoaderRoute: typeof ShareMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/viewer/profile': {
+      id: '/dashboard/viewer/profile'
+      path: '/profile'
+      fullPath: '/dashboard/viewer/profile'
+      preLoaderRoute: typeof DashboardViewerProfileRouteImport
+      parentRoute: typeof DashboardViewerRoute
+    }
+    '/dashboard/viewer/predictions': {
+      id: '/dashboard/viewer/predictions'
+      path: '/predictions'
+      fullPath: '/dashboard/viewer/predictions'
+      preLoaderRoute: typeof DashboardViewerPredictionsRouteImport
+      parentRoute: typeof DashboardViewerRoute
+    }
+    '/dashboard/viewer/highlights': {
+      id: '/dashboard/viewer/highlights'
+      path: '/highlights'
+      fullPath: '/dashboard/viewer/highlights'
+      preLoaderRoute: typeof DashboardViewerHighlightsRouteImport
+      parentRoute: typeof DashboardViewerRoute
+    }
+    '/dashboard/viewer/following': {
+      id: '/dashboard/viewer/following'
+      path: '/following'
+      fullPath: '/dashboard/viewer/following'
+      preLoaderRoute: typeof DashboardViewerFollowingRouteImport
+      parentRoute: typeof DashboardViewerRoute
+    }
+    '/dashboard/viewer/chat': {
+      id: '/dashboard/viewer/chat'
+      path: '/chat'
+      fullPath: '/dashboard/viewer/chat'
+      preLoaderRoute: typeof DashboardViewerChatRouteImport
+      parentRoute: typeof DashboardViewerRoute
+    }
+    '/dashboard/team/squad': {
+      id: '/dashboard/team/squad'
+      path: '/squad'
+      fullPath: '/dashboard/team/squad'
+      preLoaderRoute: typeof DashboardTeamSquadRouteImport
+      parentRoute: typeof DashboardTeamRoute
+    }
     '/dashboard/team/register': {
       id: '/dashboard/team/register'
       path: '/register'
       fullPath: '/dashboard/team/register'
       preLoaderRoute: typeof DashboardTeamRegisterRouteImport
       parentRoute: typeof DashboardTeamRoute
+    }
+    '/dashboard/team/profile': {
+      id: '/dashboard/team/profile'
+      path: '/profile'
+      fullPath: '/dashboard/team/profile'
+      preLoaderRoute: typeof DashboardTeamProfileRouteImport
+      parentRoute: typeof DashboardTeamRoute
+    }
+    '/dashboard/team/media': {
+      id: '/dashboard/team/media'
+      path: '/media'
+      fullPath: '/dashboard/team/media'
+      preLoaderRoute: typeof DashboardTeamMediaRouteImport
+      parentRoute: typeof DashboardTeamRoute
+    }
+    '/dashboard/team/matches': {
+      id: '/dashboard/team/matches'
+      path: '/matches'
+      fullPath: '/dashboard/team/matches'
+      preLoaderRoute: typeof DashboardTeamMatchesRouteImport
+      parentRoute: typeof DashboardTeamRoute
+    }
+    '/dashboard/team/formations': {
+      id: '/dashboard/team/formations'
+      path: '/formations'
+      fullPath: '/dashboard/team/formations'
+      preLoaderRoute: typeof DashboardTeamFormationsRouteImport
+      parentRoute: typeof DashboardTeamRoute
+    }
+    '/dashboard/moderator/var': {
+      id: '/dashboard/moderator/var'
+      path: '/var'
+      fullPath: '/dashboard/moderator/var'
+      preLoaderRoute: typeof DashboardModeratorVarRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/statistics': {
+      id: '/dashboard/moderator/statistics'
+      path: '/statistics'
+      fullPath: '/dashboard/moderator/statistics'
+      preLoaderRoute: typeof DashboardModeratorStatisticsRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/replay': {
+      id: '/dashboard/moderator/replay'
+      path: '/replay'
+      fullPath: '/dashboard/moderator/replay'
+      preLoaderRoute: typeof DashboardModeratorReplayRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/graphics': {
+      id: '/dashboard/moderator/graphics'
+      path: '/graphics'
+      fullPath: '/dashboard/moderator/graphics'
+      preLoaderRoute: typeof DashboardModeratorGraphicsRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/events': {
+      id: '/dashboard/moderator/events'
+      path: '/events'
+      fullPath: '/dashboard/moderator/events'
+      preLoaderRoute: typeof DashboardModeratorEventsRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/cameras': {
+      id: '/dashboard/moderator/cameras'
+      path: '/cameras'
+      fullPath: '/dashboard/moderator/cameras'
+      preLoaderRoute: typeof DashboardModeratorCamerasRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/broadcast': {
+      id: '/dashboard/moderator/broadcast'
+      path: '/broadcast'
+      fullPath: '/dashboard/moderator/broadcast'
+      preLoaderRoute: typeof DashboardModeratorBroadcastRouteImport
+      parentRoute: typeof DashboardModeratorRoute
+    }
+    '/dashboard/moderator/announcements': {
+      id: '/dashboard/moderator/announcements'
+      path: '/announcements'
+      fullPath: '/dashboard/moderator/announcements'
+      preLoaderRoute: typeof DashboardModeratorAnnouncementsRouteImport
+      parentRoute: typeof DashboardModeratorRoute
     }
     '/dashboard/league/wallet': {
       id: '/dashboard/league/wallet'
@@ -893,6 +1482,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardLeagueLeagueIdRouteImport
       parentRoute: typeof DashboardLeagueRoute
     }
+    '/dashboard/coach/training': {
+      id: '/dashboard/coach/training'
+      path: '/training'
+      fullPath: '/dashboard/coach/training'
+      preLoaderRoute: typeof DashboardCoachTrainingRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/tactics': {
+      id: '/dashboard/coach/tactics'
+      path: '/tactics'
+      fullPath: '/dashboard/coach/tactics'
+      preLoaderRoute: typeof DashboardCoachTacticsRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/squad': {
+      id: '/dashboard/coach/squad'
+      path: '/squad'
+      fullPath: '/dashboard/coach/squad'
+      preLoaderRoute: typeof DashboardCoachSquadRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/performance': {
+      id: '/dashboard/coach/performance'
+      path: '/performance'
+      fullPath: '/dashboard/coach/performance'
+      preLoaderRoute: typeof DashboardCoachPerformanceRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/medical': {
+      id: '/dashboard/coach/medical'
+      path: '/medical'
+      fullPath: '/dashboard/coach/medical'
+      preLoaderRoute: typeof DashboardCoachMedicalRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/matches': {
+      id: '/dashboard/coach/matches'
+      path: '/matches'
+      fullPath: '/dashboard/coach/matches'
+      preLoaderRoute: typeof DashboardCoachMatchesRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/lineups': {
+      id: '/dashboard/coach/lineups'
+      path: '/lineups'
+      fullPath: '/dashboard/coach/lineups'
+      preLoaderRoute: typeof DashboardCoachLineupsRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
+    '/dashboard/coach/formations': {
+      id: '/dashboard/coach/formations'
+      path: '/formations'
+      fullPath: '/dashboard/coach/formations'
+      preLoaderRoute: typeof DashboardCoachFormationsRouteImport
+      parentRoute: typeof DashboardCoachRoute
+    }
     '/dashboard/team/players/register': {
       id: '/dashboard/team/players/register'
       path: '/players/register'
@@ -933,6 +1578,32 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface DashboardCoachRouteChildren {
+  DashboardCoachFormationsRoute: typeof DashboardCoachFormationsRoute
+  DashboardCoachLineupsRoute: typeof DashboardCoachLineupsRoute
+  DashboardCoachMatchesRoute: typeof DashboardCoachMatchesRoute
+  DashboardCoachMedicalRoute: typeof DashboardCoachMedicalRoute
+  DashboardCoachPerformanceRoute: typeof DashboardCoachPerformanceRoute
+  DashboardCoachSquadRoute: typeof DashboardCoachSquadRoute
+  DashboardCoachTacticsRoute: typeof DashboardCoachTacticsRoute
+  DashboardCoachTrainingRoute: typeof DashboardCoachTrainingRoute
+}
+
+const DashboardCoachRouteChildren: DashboardCoachRouteChildren = {
+  DashboardCoachFormationsRoute: DashboardCoachFormationsRoute,
+  DashboardCoachLineupsRoute: DashboardCoachLineupsRoute,
+  DashboardCoachMatchesRoute: DashboardCoachMatchesRoute,
+  DashboardCoachMedicalRoute: DashboardCoachMedicalRoute,
+  DashboardCoachPerformanceRoute: DashboardCoachPerformanceRoute,
+  DashboardCoachSquadRoute: DashboardCoachSquadRoute,
+  DashboardCoachTacticsRoute: DashboardCoachTacticsRoute,
+  DashboardCoachTrainingRoute: DashboardCoachTrainingRoute,
+}
+
+const DashboardCoachRouteWithChildren = DashboardCoachRoute._addFileChildren(
+  DashboardCoachRouteChildren,
+)
+
 interface DashboardLeagueRouteChildren {
   DashboardLeagueLeagueIdRoute: typeof DashboardLeagueLeagueIdRoute
   DashboardLeagueBroadcastRoute: typeof DashboardLeagueBroadcastRoute
@@ -961,13 +1632,48 @@ const DashboardLeagueRouteWithChildren = DashboardLeagueRoute._addFileChildren(
   DashboardLeagueRouteChildren,
 )
 
+interface DashboardModeratorRouteChildren {
+  DashboardModeratorAnnouncementsRoute: typeof DashboardModeratorAnnouncementsRoute
+  DashboardModeratorBroadcastRoute: typeof DashboardModeratorBroadcastRoute
+  DashboardModeratorCamerasRoute: typeof DashboardModeratorCamerasRoute
+  DashboardModeratorEventsRoute: typeof DashboardModeratorEventsRoute
+  DashboardModeratorGraphicsRoute: typeof DashboardModeratorGraphicsRoute
+  DashboardModeratorReplayRoute: typeof DashboardModeratorReplayRoute
+  DashboardModeratorStatisticsRoute: typeof DashboardModeratorStatisticsRoute
+  DashboardModeratorVarRoute: typeof DashboardModeratorVarRoute
+}
+
+const DashboardModeratorRouteChildren: DashboardModeratorRouteChildren = {
+  DashboardModeratorAnnouncementsRoute: DashboardModeratorAnnouncementsRoute,
+  DashboardModeratorBroadcastRoute: DashboardModeratorBroadcastRoute,
+  DashboardModeratorCamerasRoute: DashboardModeratorCamerasRoute,
+  DashboardModeratorEventsRoute: DashboardModeratorEventsRoute,
+  DashboardModeratorGraphicsRoute: DashboardModeratorGraphicsRoute,
+  DashboardModeratorReplayRoute: DashboardModeratorReplayRoute,
+  DashboardModeratorStatisticsRoute: DashboardModeratorStatisticsRoute,
+  DashboardModeratorVarRoute: DashboardModeratorVarRoute,
+}
+
+const DashboardModeratorRouteWithChildren =
+  DashboardModeratorRoute._addFileChildren(DashboardModeratorRouteChildren)
+
 interface DashboardTeamRouteChildren {
+  DashboardTeamFormationsRoute: typeof DashboardTeamFormationsRoute
+  DashboardTeamMatchesRoute: typeof DashboardTeamMatchesRoute
+  DashboardTeamMediaRoute: typeof DashboardTeamMediaRoute
+  DashboardTeamProfileRoute: typeof DashboardTeamProfileRoute
   DashboardTeamRegisterRoute: typeof DashboardTeamRegisterRoute
+  DashboardTeamSquadRoute: typeof DashboardTeamSquadRoute
   DashboardTeamPlayersRegisterRoute: typeof DashboardTeamPlayersRegisterRoute
 }
 
 const DashboardTeamRouteChildren: DashboardTeamRouteChildren = {
+  DashboardTeamFormationsRoute: DashboardTeamFormationsRoute,
+  DashboardTeamMatchesRoute: DashboardTeamMatchesRoute,
+  DashboardTeamMediaRoute: DashboardTeamMediaRoute,
+  DashboardTeamProfileRoute: DashboardTeamProfileRoute,
   DashboardTeamRegisterRoute: DashboardTeamRegisterRoute,
+  DashboardTeamSquadRoute: DashboardTeamSquadRoute,
   DashboardTeamPlayersRegisterRoute: DashboardTeamPlayersRegisterRoute,
 }
 
@@ -975,31 +1681,51 @@ const DashboardTeamRouteWithChildren = DashboardTeamRoute._addFileChildren(
   DashboardTeamRouteChildren,
 )
 
+interface DashboardViewerRouteChildren {
+  DashboardViewerChatRoute: typeof DashboardViewerChatRoute
+  DashboardViewerFollowingRoute: typeof DashboardViewerFollowingRoute
+  DashboardViewerHighlightsRoute: typeof DashboardViewerHighlightsRoute
+  DashboardViewerPredictionsRoute: typeof DashboardViewerPredictionsRoute
+  DashboardViewerProfileRoute: typeof DashboardViewerProfileRoute
+}
+
+const DashboardViewerRouteChildren: DashboardViewerRouteChildren = {
+  DashboardViewerChatRoute: DashboardViewerChatRoute,
+  DashboardViewerFollowingRoute: DashboardViewerFollowingRoute,
+  DashboardViewerHighlightsRoute: DashboardViewerHighlightsRoute,
+  DashboardViewerPredictionsRoute: DashboardViewerPredictionsRoute,
+  DashboardViewerProfileRoute: DashboardViewerProfileRoute,
+}
+
+const DashboardViewerRouteWithChildren = DashboardViewerRoute._addFileChildren(
+  DashboardViewerRouteChildren,
+)
+
 interface DashboardRouteChildren {
   DashboardCameraRoute: typeof DashboardCameraRoute
-  DashboardCoachRoute: typeof DashboardCoachRoute
+  DashboardCoachRoute: typeof DashboardCoachRouteWithChildren
   DashboardCommentatorRoute: typeof DashboardCommentatorRoute
   DashboardLeagueRoute: typeof DashboardLeagueRouteWithChildren
   DashboardLeaguesRoute: typeof DashboardLeaguesRoute
-  DashboardModeratorRoute: typeof DashboardModeratorRoute
+  DashboardModeratorRoute: typeof DashboardModeratorRouteWithChildren
   DashboardSponsorRoute: typeof DashboardSponsorRoute
   DashboardTeamRoute: typeof DashboardTeamRouteWithChildren
   DashboardTeamsRoute: typeof DashboardTeamsRoute
-  DashboardViewerRoute: typeof DashboardViewerRoute
+  DashboardViewerRoute: typeof DashboardViewerRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCameraRoute: DashboardCameraRoute,
-  DashboardCoachRoute: DashboardCoachRoute,
+  DashboardCoachRoute: DashboardCoachRouteWithChildren,
   DashboardCommentatorRoute: DashboardCommentatorRoute,
   DashboardLeagueRoute: DashboardLeagueRouteWithChildren,
   DashboardLeaguesRoute: DashboardLeaguesRoute,
-  DashboardModeratorRoute: DashboardModeratorRoute,
+  DashboardModeratorRoute: DashboardModeratorRouteWithChildren,
   DashboardSponsorRoute: DashboardSponsorRoute,
   DashboardTeamRoute: DashboardTeamRouteWithChildren,
   DashboardTeamsRoute: DashboardTeamsRoute,
-  DashboardViewerRoute: DashboardViewerRoute,
+  DashboardViewerRoute: DashboardViewerRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
@@ -1028,6 +1754,16 @@ const LiveRouteChildren: LiveRouteChildren = {
 
 const LiveRouteWithChildren = LiveRoute._addFileChildren(LiveRouteChildren)
 
+interface TeamsRouteChildren {
+  TeamsSlugRoute: typeof TeamsSlugRoute
+}
+
+const TeamsRouteChildren: TeamsRouteChildren = {
+  TeamsSlugRoute: TeamsSlugRoute,
+}
+
+const TeamsRouteWithChildren = TeamsRoute._addFileChildren(TeamsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1038,11 +1774,17 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   LeaguesRoute: LeaguesRouteWithChildren,
   LiveRoute: LiveRouteWithChildren,
+  TeamsRoute: TeamsRouteWithChildren,
   CommentateMatchIdRoute: CommentateMatchIdRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
   MatchesIdRoute: MatchesIdRoute,
   ModeratorMatchIdRoute: ModeratorMatchIdRoute,
   RefereeMatchIdRoute: RefereeMatchIdRoute,
+  RegisterLeagueRoute: RegisterLeagueRoute,
+  RegisterTeamRoute: RegisterTeamRoute,
   MatchesIndexRoute: MatchesIndexRoute,
+  ShareMatchIdRoute: ShareMatchIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
