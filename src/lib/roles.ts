@@ -3,9 +3,13 @@ export const ROLES = [
   'league_owner',
   'team_owner',
   'coach',
+  'general_moderator',
   'moderator',
+  'assistant_moderator',
   'camera_operator',
   'commentator',
+  'analyst',
+  'statistician',
   'viewer',
   'sponsor',
 ] as const;
@@ -18,9 +22,13 @@ export const roleLabels: Record<UserRole, string> = {
   league_owner: 'League Owner',
   team_owner: 'Team Owner',
   coach: 'Coach',
+  general_moderator: 'General Moderator',
   moderator: 'Moderator',
+  assistant_moderator: 'Assistant Moderator',
   camera_operator: 'Camera Operator',
   commentator: 'Commentator',
+  analyst: 'Analyst',
+  statistician: 'Statistician',
   viewer: 'Viewer / Fan',
   sponsor: 'Sponsor / Advertiser',
 };
@@ -30,15 +38,28 @@ export const roleDashboards = {
   league_owner: '/dashboard/league',
   team_owner: '/dashboard/team',
   coach: '/dashboard/coach',
+  general_moderator: '/dashboard/moderator',
   moderator: '/dashboard/moderator',
+  assistant_moderator: '/dashboard/moderator',
   camera_operator: '/dashboard/camera',
   commentator: '/dashboard/commentator',
+  analyst: '/dashboard/moderator',
+  statistician: '/dashboard/moderator',
   viewer: '/dashboard/viewer',
   sponsor: '/dashboard/sponsor',
 } as const;
 
-export const inviteOnlyRoles: UserRole[] = ['moderator', 'camera_operator', 'commentator'];
-export const publicSignupRoles: UserRole[] = ['league_owner', 'team_owner', 'coach', 'viewer', 'sponsor'];
+export const inviteOnlyRoles: UserRole[] = [
+  'general_moderator',
+  'moderator',
+  'assistant_moderator',
+  'camera_operator',
+  'commentator',
+  'analyst',
+  'statistician',
+  'coach',
+];
+export const publicSignupRoles: UserRole[] = ['league_owner', 'team_owner', 'viewer', 'sponsor'];
 
 export function dashboardForRole(role?: UserRole | null) {
   return role ? roleDashboards[role] : '/auth';

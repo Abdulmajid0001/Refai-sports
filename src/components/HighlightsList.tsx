@@ -69,8 +69,8 @@ export function HighlightsList({ matchId }: { matchId: string }) {
         )}
         <div className="mt-3">
           <Button asChild size="sm" variant="outline">
-            <Link to="/share/match/$id" params={{ id: matchId }}>
-              <Share2 className="mr-1 h-4 w-4" />Open shareable card
+            <Link to="/matches/$id" params={{ id: matchId }}>
+              <Share2 className="mr-1 h-4 w-4" />Open match page
             </Link>
           </Button>
         </div>

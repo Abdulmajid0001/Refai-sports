@@ -267,7 +267,7 @@ export function InstantReplayEngine({ matchId, leagueId, leagueLogo, sponsorName
           <div className="border-l border-slate-700 h-6 mx-1" />
 
           {/* Speed */}
-          <Select value={playbackSpeed.toString()} onValueChange={(v) => setPlaybackSpeed(Number(v))}>
+          <Select value={playbackSpeed.toString()} onValueChange={(v: string) => setPlaybackSpeed(Number(v))}>
             <SelectTrigger className="w-16 h-7 text-xs">
               <SelectValue />
             </SelectTrigger>

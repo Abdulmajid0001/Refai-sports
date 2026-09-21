@@ -31,6 +31,7 @@ type MatchStatus = "scheduled" | "live" | "halftime" | "completed" | "postponed"
 type GoalType = "open_play" | "penalty" | "free_kick" | "own_goal" | "header";
 type CardReason = "foul" | "dissent" | "handball" | "dangerous_tackle" | "violent_conduct" | "time_wasting";
 type EventType = "goal" | "penalty" | "yellow_card" | "red_card" | "second_yellow" | "foul" | "advantage" | "free_kick" | "corner" | "offside" | "substitution" | "injury" | "var_check" | "var_decision" | "kickoff" | "period_end" | "period_start" | "fulltime" | "note";
+type EventVisibility = 'live' | 'timeline' | 'internal';
 
 export const Route = createFileRoute("/moderator/$matchId")({ component: ModeratorControlCenter });
 
@@ -105,6 +106,7 @@ export function ModeratorControlCenter() {
   const [minute, setMinute] = useState(0);
   const [extra, setExtra] = useState(0);
   const [clockRunning, setClockRunning] = useState(false);
+  const [eventVisibility, setEventVisibility] = useState<EventVisibility>('live');
   useEffect(() => {
     if (!clockRunning) return;
     const t = setInterval(() => setMinute(m => m + 1), 60_000);
@@ -181,7 +183,17 @@ export function ModeratorControlCenter() {
   async function logEvent(type: EventType, teamId?: string | null, detail?: string) {
     if (!user) return;
     const { error } = await supabase.from("match_events").insert({
-      match_id: matchId, type, team_id: teamId ?? null, minute: minute || null, extra_minute: extra || null, detail: detail ?? null, created_by: user.id,
+      match_id: matchId,
+      type,
+      team_id: teamId ?? null,
+      minute: minute || null,
+      extra_minute: extra || null,
+      detail: detail ?? null,
+      created_by: user.id,
+      visibility: eventVisibility,
+      publication_status: eventVisibility === 'internal' ? 'confirmed' : 'published',
+      source: 'manual',
+      client_event_id: crypto.randomUUID(),
     });
     if (error) toast.error(error.message);
     else toast.success(`${type.replace(/_/g, " ")} logged`);
@@ -266,9 +278,6 @@ export function ModeratorControlCenter() {
             <span className="ml-2 text-sm text-white/50">{minute}{extra ? `+${extra}` : ""}'</span>
           </div>
           <Button asChild size="sm" variant="outline" className="border-amber-800 text-amber-300">
-            <Link to="/var/$matchId" params={{ matchId }}>VAR Page</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline" className="border-amber-800 text-amber-300">
             <Link to="/live/$matchId" params={{ matchId }}>Viewer Page</Link>
           </Button>
         </div>
@@ -315,7 +324,22 @@ export function ModeratorControlCenter() {
 
               <Card className="border-gray-800 bg-gray-900">
                 <CardHeader><CardTitle className="text-sm text-amber-300">Quick Actions</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 gap-2">
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+                    <div>
+                      <Label className="text-xs text-white/50">Live Output Control</Label>
+                      <Select value={eventVisibility} onValueChange={(value) => setEventVisibility(value as EventVisibility)}>
+                        <SelectTrigger className="border-gray-700 bg-gray-800"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="live">Live field</SelectItem>
+                          <SelectItem value="timeline">Timeline only</SelectItem>
+                          <SelectItem value="internal">Internal only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Badge variant="outline" className="mb-1 border-amber-700 text-amber-300">{eventVisibility.replace('_', ' ')}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                   <Button size="sm" variant="outline" className="border-gray-700" onClick={() => logEvent("foul", null, "General foul")}><AlertTriangle className="mr-1 h-4 w-4" />Foul</Button>
                   <Button size="sm" variant="outline" className="border-gray-700" onClick={() => logEvent("advantage", null, "Advantage")}><FastForward className="mr-1 h-4 w-4" />Advantage</Button>
                   <Button size="sm" variant="outline" className="border-gray-700" onClick={() => logEvent("free_kick", null, "Free kick")}><Target className="mr-1 h-4 w-4" />Free Kick</Button>
@@ -324,6 +348,7 @@ export function ModeratorControlCenter() {
                   <Button size="sm" variant="outline" className="border-gray-700" onClick={() => logEvent("injury", null, "Injury")}><UserPlus className="mr-1 h-4 w-4" />Injury</Button>
                   <Button size="sm" variant="outline" className="border-cyan-800 text-cyan-400" onClick={() => logEvent("var_check", null, "VAR check")}><Shield className="mr-1 h-4 w-4" />VAR Check</Button>
                   <Button size="sm" variant="ghost" className="text-white/40" onClick={() => logEvent("note", null, "Note")}><FileText className="mr-1 h-4 w-4" />Note</Button>
+                  </div>
                 </CardContent>
               </Card>
 

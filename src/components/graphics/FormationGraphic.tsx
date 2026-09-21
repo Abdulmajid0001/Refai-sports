@@ -10,7 +10,7 @@ export function FormationGraphic({ payload, onDismiss }: Props) {
 
   const players = playerNames.split(",").map((p: string) => p.trim()).filter(Boolean);
   const positions = formation.split("-").map(Number);
-  const totalPlayers = positions.reduce((a, b) => a + b, 0) + 1; // +1 for GK
+  const totalPlayers = positions.reduce((a: number, b: number) => a + b, 0) + 1; // +1 for GK
 
   // Simple pitch visualization
   return (

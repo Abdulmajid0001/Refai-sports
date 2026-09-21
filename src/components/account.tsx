@@ -14,7 +14,7 @@ import { NotificationPreferencesCard } from "@/components/notifications/Notifica
 export const Route = createFileRoute("/account")({ component: AccountPage });
 
 function AccountPage() {
-  const { user, roles, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -54,8 +54,8 @@ function AccountPage() {
             <div>
               <Label>Roles</Label>
               <div className="mt-2 flex flex-wrap gap-2">
-                {roles.length === 0 ? <span className="text-sm text-muted-foreground">No roles assigned yet.</span> :
-                  roles.map((r) => <Badge key={r} variant="secondary" className="capitalize">{r.replace("_", " ")}</Badge>)}
+                {!profile?.role ? <span className="text-sm text-muted-foreground">No role assigned yet.</span> :
+                  <Badge variant="secondary" className="capitalize">{profile.role.replace(/_/g, " ")}</Badge>}
               </div>
             </div>
             <div className="flex gap-2">

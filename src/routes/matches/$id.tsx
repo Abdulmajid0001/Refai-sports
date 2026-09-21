@@ -19,7 +19,7 @@ export const Route = createFileRoute("/matches/$id")({ component: MatchDetail })
 
 function MatchDetail() {
   const { id } = Route.useParams();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
 
 
   const matchQ = useQuery({
@@ -44,6 +44,8 @@ function MatchDetail() {
         .from("match_events")
         .select("id, minute, extra_minute, type, detail, team_id, created_at")
         .eq("match_id", id)
+        .in("visibility", ["live", "timeline"])
+        .eq("publication_status", "published")
         .order("created_at", { ascending: false });
       return data ?? [];
     },
@@ -75,7 +77,7 @@ function MatchDetail() {
             <div className="text-xs uppercase tracking-widest text-muted-foreground">
               {m.league?.name} {m.matchday && `• Matchday ${m.matchday}`}
             </div>
-            {user && (
+            {user && hasRole(['general_moderator', 'moderator', 'assistant_moderator']) && (
               <Button asChild size="sm" variant="outline">
                 <Link to="/referee/$matchId" params={{ matchId: id }}>
                   <Radio className="mr-1 h-4 w-4" />Referee console
@@ -135,7 +137,7 @@ function MatchDetail() {
         </div>
         {m.status === "live" && user && (
           <div className="lg:col-span-2">
-            <LiveStreamRoom matchId={id} role="viewer" name={user.email ?? "Viewer"} />
+            <LiveStreamRoom matchId={id} role="subscriber" name={user.email ?? "Viewer"} />
           </div>
         )}
         <div className="lg:col-span-2">

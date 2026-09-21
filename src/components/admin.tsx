@@ -2,11 +2,8 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect , type ReactNode } from "react";
 import {
   ShieldCheck,
-  Users,
-  Trophy,
   Images,
   Megaphone,
-  CreditCard,
   Home,
   Lock,
 } from "lucide-react";
@@ -54,11 +51,8 @@ export function AdminLayout() {
             <ShieldCheck className="h-3.5 w-3.5" /> Super admin
           </div>
           <SideLink to="/admin" icon={<Home className="h-4 w-4" />}>Overview</SideLink>
-          <SideLink to="/admin/users" icon={<Users className="h-4 w-4" />}>Users & sign-ups</SideLink>
-          <SideLink to="/admin/moderation" icon={<Trophy className="h-4 w-4" />}>Leagues & teams</SideLink>
           <SideLink to="/admin/slideshow" icon={<Images className="h-4 w-4" />}>Homepage slideshow</SideLink>
           <SideLink to="/admin/ads" icon={<Megaphone className="h-4 w-4" />}>Ads & overlays</SideLink>
-          <SideLink to="/admin/payments" icon={<CreditCard className="h-4 w-4" />}>Payments & plans</SideLink>
         </aside>
         <div>
           <Outlet />

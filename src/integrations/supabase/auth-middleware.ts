@@ -1,4 +1,4 @@
-type ServerFnContext = { context?: Record<string, unknown> };
+type ServerFnContext = { context?: { userId?: unknown; user?: { id?: unknown } } };
 
 export async function requireSupabaseAuth({ context }: ServerFnContext = {}) {
   const userId = context?.userId ?? context?.user?.id;

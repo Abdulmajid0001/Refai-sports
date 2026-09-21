@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Palette, Monitor, Image, Clock, Type, Eye, EyeOff,
-  RotateCw, Check, Trash2, Upload, Settings, Preview
+  RotateCw, Check, Trash2, Upload, Settings
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";

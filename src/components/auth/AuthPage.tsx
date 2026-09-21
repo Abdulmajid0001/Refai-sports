@@ -97,6 +97,7 @@ const roleCards = [
 
 export function AuthPage() {
   const navigate = useNavigate();
+  const invitationTokenFromUrl = new URLSearchParams(window.location.search).get('invite')?.trim() ?? '';
 
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
@@ -107,7 +108,7 @@ export function AuthPage() {
     email: '',
     phone: '',
     password: '',
-    inviteToken: '',
+    inviteToken: invitationTokenFromUrl,
   });
 
   const selectedCard = useMemo(
@@ -117,6 +118,7 @@ export function AuthPage() {
 
   const inviteOnly = selectedRole ? inviteOnlyRoles.includes(selectedRole) : false;
   const publicRole = selectedRole ? publicSignupRoles.includes(selectedRole) : false;
+  const invitationMode = !!form.inviteToken.trim();
 
   function update(key: keyof typeof form, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -125,7 +127,7 @@ export function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (mode === 'signup' && !selectedRole) {
+    if (mode === 'signup' && !selectedRole && !invitationMode) {
       toast.error('Choose a role first');
       return;
     }
@@ -151,6 +153,13 @@ export function AuthPage() {
 
         if (error) throw error;
 
+        if (invitationMode) {
+          const { error: inviteError } = await supabase.rpc('accept_staff_invitation', {
+            p_token: form.inviteToken.trim(),
+          });
+          if (inviteError) throw inviteError;
+        }
+
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
@@ -169,18 +178,23 @@ export function AuthPage() {
       }
 
       const displayName = `${form.firstName} ${form.lastName}`.trim();
+      // Staff roles are granted only by the invitation RPC after account creation.
+      const requestedRole = invitationMode || inviteOnly ? 'viewer' : selectedRole!;
+      const inviteRedirect = form.inviteToken.trim()
+        ? `?invite=${encodeURIComponent(form.inviteToken.trim())}`
+        : '';
 
       const { data, error } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback${inviteRedirect}`,
           data: {
             first_name: form.firstName.trim(),
             last_name: form.lastName.trim(),
             display_name: displayName,
             phone: form.phone.trim(),
-            role: selectedRole,
+            role: requestedRole,
             invite_token: form.inviteToken.trim() || null,
           },
         },
@@ -196,8 +210,8 @@ export function AuthPage() {
         display_name: displayName,
         email: form.email.trim(),
         phone: form.phone.trim(),
-        role: selectedRole,
-        account_status: selectedRole === 'viewer' ? 'approved' : 'pending_verification',
+        role: requestedRole,
+        account_status: requestedRole === 'viewer' ? 'approved' : 'pending_verification',
         mfa_enabled: false,
       });
 
@@ -209,8 +223,17 @@ export function AuthPage() {
         return;
       }
 
+      let resolvedRole = requestedRole;
+      if (inviteOnly) {
+        const { data: invitation, error: invitationError } = await supabase.rpc('accept_staff_invitation', {
+          p_token: form.inviteToken.trim(),
+        });
+        if (invitationError) throw invitationError;
+        resolvedRole = invitation?.[0]?.role ?? requestedRole;
+      }
+
       toast.success('Account created. Continue onboarding.');
-      navigate({ to: dashboardForRole(selectedRole!) as never });
+      navigate({ to: dashboardForRole(resolvedRole) as never });
     } catch (err: any) {
       console.error('Auth error:', err);
 
@@ -280,14 +303,16 @@ export function AuthPage() {
         <Card className="h-fit">
           <CardHeader>
             <CardTitle>
-              {selectedCard
+              {invitationMode
+                ? `${mode === 'signup' ? 'Create an account for' : 'Sign in to accept'} your secure staff invitation`
+                : selectedCard
                 ? `${mode === 'signup' ? 'Create' : 'Sign in to'} ${selectedCard.title}`
                 : 'Select a role'}
             </CardTitle>
           </CardHeader>
 
           <CardContent>
-            {!selectedRole ? (
+            {!selectedRole && !invitationMode ? (
               <p className="text-sm text-muted-foreground">Pick a card to continue.</p>
             ) : (
               <form className="space-y-4" onSubmit={submit}>
@@ -331,11 +356,17 @@ export function AuthPage() {
                   <Input type="password" minLength={8} value={form.password} onChange={(e) => update('password', e.target.value)} required />
                 </div>
 
-                {mode === 'signup' && inviteOnly && (
+                {((mode === 'signup' && inviteOnly) || invitationMode) && (
                   <div>
                     <Label>Invite token</Label>
                     <Input value={form.inviteToken} onChange={(e) => update('inviteToken', e.target.value)} required />
                   </div>
+                )}
+
+                {invitationMode && (
+                  <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                    This invitation assigns the role and match permissions chosen by the league owner after the invited email address is authenticated.
+                  </p>
                 )}
 
                 {mode === 'signup' && publicRole && selectedRole !== 'viewer' && (

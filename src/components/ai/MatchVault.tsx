@@ -227,7 +227,7 @@ export function MatchVault({ leagueId, onSelectMatch }: MatchVaultProps) {
   // Download selected matches
   const downloadSelected = useCallback(async () => {
     const selectedList = matches.filter((m) => selectedMatches.has(m.id));
-    toast.success(`Preparing ${selectedList.size} matches for download...`);
+    toast.success(`Preparing ${selectedList.length} matches for download...`);
 
     for (const match of selectedList) {
       await downloadMatch(match);

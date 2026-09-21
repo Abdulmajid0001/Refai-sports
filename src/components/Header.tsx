@@ -7,7 +7,9 @@ import { useAuth } from '@/hooks/use-auth';
 const NAV = [
   { to: '/leagues', label: 'Leagues' },
   { to: '/live', label: 'Live' },
+  { to: '/upcoming', label: 'Upcoming' },
   { to: '/matches', label: 'Matches' },
+  { to: '/teams', label: 'Teams' },
   { to: '/about', label: 'About' },
 ] as const;
 

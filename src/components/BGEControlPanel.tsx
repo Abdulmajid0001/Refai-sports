@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useBGE } from "./use-bge";
 import { BGEOverlayRenderer } from "./BGEOverlayRenderer";
-import type { BGEGraphicType, BGEDisplayMode, GoalType, CardColor } from "./types";
+import type { BGEGraphicType, BGEDisplayMode, GoalType, CardColor, CardReason } from "./types";
 import { DEFAULT_DISPLAY_MODES, DEFAULT_DISMISS_MS } from "./types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -314,10 +314,12 @@ function GraphicEditor({ type, match, minute, onPush, onClose }: {
           </Select>
           <Input placeholder="Incident reason" className="h-7 text-xs" value={fields.incidentReason ?? ""} onChange={(e) => updateField("incidentReason", e.target.value)} />
           {fields.phase === "result" && (
-            <Select value={fields.result ?? "no_penalty"} onValueChange={(v) => updateField("result", v)} className="col-span-2">
-              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>{["penalty_awarded","no_penalty","goal_confirmed","goal_disallowed"].map((r) => <SelectItem key={r} value={r} className="text-xs">{r.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
-            </Select>
+            <div className="col-span-2">
+              <Select value={fields.result ?? "no_penalty"} onValueChange={(v) => updateField("result", v)}>
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>{["penalty_awarded","no_penalty","goal_confirmed","goal_disallowed"].map((r) => <SelectItem key={r} value={r} className="text-xs">{r.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           )}
         </div>
       )}

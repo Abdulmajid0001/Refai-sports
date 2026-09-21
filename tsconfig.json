@@ -29,5 +29,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/**/*_(1).ts",
+    "src/**/temp.txt"
   ]
 }

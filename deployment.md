@@ -152,7 +152,7 @@ Create a .env file in the project root with values similar to the following:
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-VITE_OPENAI_API_KEY=your-openai-key
+OPENAI_API_KEY=your-openai-key
 STRIPE_SECRET_KEY=sk_live_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 STRIPE_PUBLISHABLE_KEY=pk_live_xxx
@@ -286,7 +286,7 @@ Set the same environment variables from `.env` in the Netlify project settings:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `VITE_STRIPE_PUBLISHABLE_KEY`
-- `VITE_OPENAI_API_KEY`
+- `OPENAI_API_KEY`
 
 ### Netlify functions
 The project already includes serverless function files under:

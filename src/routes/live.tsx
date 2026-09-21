@@ -10,7 +10,7 @@ import { SiteAdSlot } from "@/components/SiteAdSlot";
 export const Route = createFileRoute("/live")({ component: LivePage });
 
 function LivePage() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["matches", "live"],
     queryFn: async () => {
       const { data } = await supabase

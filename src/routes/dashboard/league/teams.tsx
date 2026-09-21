@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, Clock, Eye, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Eye, PlayCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -63,6 +63,18 @@ function LeagueTeamsPage() {
       qc.invalidateQueries({ queryKey: ['league-dashboard-teams'] });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : 'Could not update team'),
+  });
+
+  const activateTeam = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('activate_team_registration', { p_team_registration_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Team activated for fixtures and public match pages');
+      qc.invalidateQueries({ queryKey: ['league-dashboard-teams'] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Activate the approved league before activating teams'),
   });
 
   return (
@@ -138,6 +150,18 @@ function LeagueTeamsPage() {
                       <XCircle className="mr-2 h-4 w-4" />
                       Reject
                     </Button>
+
+                    {team.status === 'approved' && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={activateTeam.isPending}
+                        onClick={() => activateTeam.mutate(team.id)}
+                      >
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Activate for fixtures
+                      </Button>
+                    )}
 
                     {team.logo_url && (
                       <Button size="sm" variant="secondary" asChild>

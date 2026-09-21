@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
+import { dashboardForRole, type UserRole } from '@/lib/roles';
 
 export const Route = createFileRoute('/auth/callback')({
   component: AuthCallbackPage,
@@ -27,6 +28,16 @@ function AuthCallbackPage() {
         return;
       }
 
+      const inviteToken = new URLSearchParams(window.location.search).get('invite');
+      if (inviteToken) {
+        const { error: inviteError } = await supabase.rpc('accept_staff_invitation', { p_token: inviteToken });
+        if (inviteError) {
+          toast.error(inviteError.message);
+          navigate({ to: '/auth' });
+          return;
+        }
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -35,11 +46,7 @@ function AuthCallbackPage() {
 
       toast.success('Account confirmed successfully');
 
-      if (profile?.role === 'league_owner') navigate({ to: '/dashboard/league' });
-      else if (profile?.role === 'team_owner') navigate({ to: '/dashboard/team' });
-      else if (profile?.role === 'moderator') navigate({ to: '/dashboard/moderator' });
-      else if (profile?.role === 'super_admin') navigate({ to: '/admin' });
-      else navigate({ to: '/dashboard/viewer' });
+      navigate({ to: dashboardForRole(profile?.role as UserRole | undefined) as never });
     }
 
     finishAuth();

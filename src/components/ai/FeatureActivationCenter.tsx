@@ -423,7 +423,7 @@ export function FeatureActivationCenter({ leagueId, onFeatureChange }: FeatureAc
                                 {feature.requiredPlan.toUpperCase()}
                               </Badge>
                               {feature.dependencies && feature.dependencies.length > 0 && (
-                                <Lock className="h-3 w-3 text-slate-500" title="Has dependencies" />
+                                <Lock className="h-3 w-3 text-slate-500" aria-label="Has dependencies" />
                               )}
                             </div>
                             <p className="text-xs text-slate-500">{feature.description}</p>

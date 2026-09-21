@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UpcomingRouteImport } from './routes/upcoming'
+import { Route as TeamsRouteImport } from './routes/teams'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as LeaguesRouteImport } from './routes/leagues'
 import { Route as HelpRouteImport } from './routes/help'
@@ -21,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MatchesIndexRouteImport } from './routes/matches/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as TeamsSlugRouteImport } from './routes/teams.$slug'
 import { Route as RefereeMatchIdRouteImport } from './routes/referee.$matchId'
 import { Route as ModeratorMatchIdRouteImport } from './routes/moderator.$matchId'
 import { Route as MatchesIdRouteImport } from './routes/matches/$id'
@@ -55,6 +58,16 @@ import { Route as DashboardLeagueBroadcastRouteImport } from './routes/dashboard
 import { Route as DashboardLeagueLeagueIdRouteImport } from './routes/dashboard/league/$leagueId'
 import { Route as DashboardTeamPlayersRegisterRouteImport } from './routes/dashboard/team/players/register'
 
+const UpcomingRoute = UpcomingRouteImport.update({
+  id: '/upcoming',
+  path: '/upcoming',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsRoute = TeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiveRoute = LiveRouteImport.update({
   id: '/live',
   path: '/live',
@@ -114,6 +127,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const TeamsSlugRoute = TeamsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => TeamsRoute,
 } as any)
 const RefereeMatchIdRoute = RefereeMatchIdRouteImport.update({
   id: '/referee/$matchId',
@@ -294,6 +312,8 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/leagues': typeof LeaguesRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/teams': typeof TeamsRouteWithChildren
+  '/upcoming': typeof UpcomingRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -316,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
+  '/teams/$slug': typeof TeamsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/matches/': typeof MatchesIndexRoute
@@ -339,6 +360,8 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/leagues': typeof LeaguesRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/teams': typeof TeamsRouteWithChildren
+  '/upcoming': typeof UpcomingRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -361,6 +384,7 @@ export interface FileRoutesByTo {
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
+  '/teams/$slug': typeof TeamsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/matches': typeof MatchesIndexRoute
@@ -387,6 +411,8 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/leagues': typeof LeaguesRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/teams': typeof TeamsRouteWithChildren
+  '/upcoming': typeof UpcomingRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -409,6 +435,7 @@ export interface FileRoutesById {
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
+  '/teams/$slug': typeof TeamsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/matches/': typeof MatchesIndexRoute
@@ -436,6 +463,8 @@ export interface FileRouteTypes {
     | '/help'
     | '/leagues'
     | '/live'
+    | '/teams'
+    | '/upcoming'
     | '/admin/ads'
     | '/admin/moderation'
     | '/admin/payments'
@@ -458,6 +487,7 @@ export interface FileRouteTypes {
     | '/matches/$id'
     | '/moderator/$matchId'
     | '/referee/$matchId'
+    | '/teams/$slug'
     | '/admin/'
     | '/dashboard/'
     | '/matches/'
@@ -481,6 +511,8 @@ export interface FileRouteTypes {
     | '/help'
     | '/leagues'
     | '/live'
+    | '/teams'
+    | '/upcoming'
     | '/admin/ads'
     | '/admin/moderation'
     | '/admin/payments'
@@ -503,6 +535,7 @@ export interface FileRouteTypes {
     | '/matches/$id'
     | '/moderator/$matchId'
     | '/referee/$matchId'
+    | '/teams/$slug'
     | '/admin'
     | '/dashboard'
     | '/matches'
@@ -528,6 +561,8 @@ export interface FileRouteTypes {
     | '/help'
     | '/leagues'
     | '/live'
+    | '/teams'
+    | '/upcoming'
     | '/admin/ads'
     | '/admin/moderation'
     | '/admin/payments'
@@ -550,6 +585,7 @@ export interface FileRouteTypes {
     | '/matches/$id'
     | '/moderator/$matchId'
     | '/referee/$matchId'
+    | '/teams/$slug'
     | '/admin/'
     | '/dashboard/'
     | '/matches/'
@@ -576,6 +612,8 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   LeaguesRoute: typeof LeaguesRouteWithChildren
   LiveRoute: typeof LiveRouteWithChildren
+  TeamsRoute: typeof TeamsRouteWithChildren
+  UpcomingRoute: typeof UpcomingRoute
   CommentateMatchIdRoute: typeof CommentateMatchIdRoute
   MatchesIdRoute: typeof MatchesIdRoute
   ModeratorMatchIdRoute: typeof ModeratorMatchIdRoute
@@ -585,6 +623,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/upcoming': {
+      id: '/upcoming'
+      path: '/upcoming'
+      fullPath: '/upcoming'
+      preLoaderRoute: typeof UpcomingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams': {
+      id: '/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof TeamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live': {
       id: '/live'
       path: '/live'
@@ -668,6 +720,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/teams/$slug': {
+      id: '/teams/$slug'
+      path: '/$slug'
+      fullPath: '/teams/$slug'
+      preLoaderRoute: typeof TeamsSlugRouteImport
+      parentRoute: typeof TeamsRoute
     }
     '/referee/$matchId': {
       id: '/referee/$matchId'
@@ -1028,6 +1087,16 @@ const LiveRouteChildren: LiveRouteChildren = {
 
 const LiveRouteWithChildren = LiveRoute._addFileChildren(LiveRouteChildren)
 
+interface TeamsRouteChildren {
+  TeamsSlugRoute: typeof TeamsSlugRoute
+}
+
+const TeamsRouteChildren: TeamsRouteChildren = {
+  TeamsSlugRoute: TeamsSlugRoute,
+}
+
+const TeamsRouteWithChildren = TeamsRoute._addFileChildren(TeamsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1038,6 +1107,8 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   LeaguesRoute: LeaguesRouteWithChildren,
   LiveRoute: LiveRouteWithChildren,
+  TeamsRoute: TeamsRouteWithChildren,
+  UpcomingRoute: UpcomingRoute,
   CommentateMatchIdRoute: CommentateMatchIdRoute,
   MatchesIdRoute: MatchesIdRoute,
   ModeratorMatchIdRoute: ModeratorMatchIdRoute,

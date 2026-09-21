@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { useServerFn } from "@/lib/server-fn";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { aiRefereeAssist } from "@/lib/ai.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 export function AIRefereePanel({ sport = "football", context }: { sport?: string; context?: string }) {
-  const ask = useServerFn(aiRefereeAssist);
   const [situation, setSituation] = useState("");
   const [answer, setAnswer] = useState("");
   const [busy, setBusy] = useState(false);
@@ -18,8 +16,19 @@ export function AIRefereePanel({ sport = "football", context }: { sport?: string
     setBusy(true);
     setAnswer("");
     try {
-      const r = await ask({ data: { sport, situation, context } });
-      setAnswer(r.content);
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) throw new Error("Sign in to use the referee assistant");
+      const response = await fetch("/.netlify/functions/ai-referee", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ sport, incident: situation, context }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "AI analysis failed");
+      setAnswer(String(payload.result || "No analysis returned."));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI request failed");
     } finally {

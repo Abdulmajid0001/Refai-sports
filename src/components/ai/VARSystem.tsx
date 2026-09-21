@@ -126,7 +126,7 @@ export function VARSystem({ matchId, leagueId, minute }: VARSystemProps) {
   const rejectDecision = useCallback(async () => {
     if (!activeReview) return;
 
-    const updatedReview = { ...activeReview, status: "decided", suggestedDecision: "reject" as const };
+    const updatedReview = { ...activeReview, status: "decided" as const, suggestedDecision: "reject" as const };
     setReviews((prev) => [...prev, updatedReview]);
     setActiveReview(null);
     setShowOverlay(false);

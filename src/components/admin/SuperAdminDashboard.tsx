@@ -21,6 +21,7 @@ import { RoleGuard } from '@/components/auth/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -92,6 +93,30 @@ function SuperAdminControl() {
     },
   });
 
+  const activeLeagueRegistrationsQ = useQuery({
+    queryKey: ['admin-active-league-registrations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leagues')
+        .select('league_registration_id')
+        .not('league_registration_id', 'is', null);
+      if (error) throw error;
+      return new Set((data ?? []).map((league) => league.league_registration_id));
+    },
+  });
+
+  const activeTeamRegistrationsQ = useQuery({
+    queryKey: ['admin-active-team-registrations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('team_registration_id')
+        .not('team_registration_id', 'is', null);
+      if (error) throw error;
+      return new Set((data ?? []).map((team) => team.team_registration_id));
+    },
+  });
+
   const walletsQ = useQuery({
     queryKey: ['admin-wallets'],
     queryFn: async () => {
@@ -133,36 +158,12 @@ function SuperAdminControl() {
 
   const updateLeague = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: StatusAction }) => {
-      const { error } = await supabase
-        .from('league_registrations')
-        .update({
-          status,
-          review_note: note || null,
-          reviewed_by: profile?.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
+      const { error } = await supabase.rpc('review_league_registration', {
+        p_registration_id: id,
+        p_status: status,
+        p_note: note || null,
+      });
       if (error) throw error;
-
-      if (status === 'approved') {
-        const { data: league } = await supabase
-          .from('league_registrations')
-          .select('id, owner_id')
-          .eq('id', id)
-          .maybeSingle();
-
-        if (league) {
-          await supabase.from('league_wallets').upsert(
-            {
-              league_registration_id: league.id,
-              owner_id: league.owner_id,
-              currency: 'NGN',
-            },
-            { onConflict: 'league_registration_id' },
-          );
-        }
-      }
     },
     onSuccess: () => {
       toast.success('League updated');
@@ -174,16 +175,11 @@ function SuperAdminControl() {
 
   const updateTeam = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: StatusAction }) => {
-      const { error } = await supabase
-        .from('team_registrations')
-        .update({
-          status,
-          review_note: note || null,
-          reviewed_by: profile?.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
+      const { error } = await supabase.rpc('review_team_registration', {
+        p_registration_id: id,
+        p_status: status,
+        p_note: note || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -191,6 +187,30 @@ function SuperAdminControl() {
       qc.invalidateQueries({ queryKey: ['admin-teams'] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Team update failed'),
+  });
+
+  const activateLeague = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('activate_league_registration', { p_registration_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('League activated for teams, fixtures, and public viewing');
+      qc.invalidateQueries({ queryKey: ['admin-active-league-registrations'] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Could not activate league'),
+  });
+
+  const activateTeam = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('activate_team_registration', { p_team_registration_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Team activated for fixtures and public viewing');
+      qc.invalidateQueries({ queryKey: ['admin-active-team-registrations'] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Activate the parent league first'),
   });
 
   const updateUser = useMutation({
@@ -391,6 +411,14 @@ function SuperAdminControl() {
                 <Button variant="destructive" onClick={() => deleteRecord.mutate({ table: 'league_registrations', id: l.id })}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
+                <LeaguePaymentControl registrationId={l.id} />
+                {l.status === 'approved' && (activeLeagueRegistrationsQ.data?.has(l.id) ? (
+                  <span className="text-sm text-emerald-300">Operational</span>
+                ) : (
+                  <Button variant="secondary" disabled={activateLeague.isPending} onClick={() => activateLeague.mutate(l.id)}>
+                    Activate operational league
+                  </Button>
+                ))}
               </Row>
             ))}
           </TabsContent>
@@ -436,6 +464,13 @@ function SuperAdminControl() {
                 <Button variant="destructive" onClick={() => deleteRecord.mutate({ table: 'team_registrations', id: t.id })}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
+                {t.status === 'approved' && (activeTeamRegistrationsQ.data?.has(t.id) ? (
+                  <span className="text-sm text-emerald-300">Operational</span>
+                ) : (
+                  <Button variant="secondary" disabled={activateTeam.isPending} onClick={() => activateTeam.mutate(t.id)}>
+                    Activate operational team
+                  </Button>
+                ))}
               </Row>
             ))}
           </TabsContent>
@@ -519,15 +554,15 @@ function SuperAdminControl() {
               ))
             )}
           </TabsContent>
+
+          <TabsContent value="site-control">
+            <AdminContentManager />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
   );
 }
-
-        <TabsContent value="site-control">
-  <AdminContentManager />
-</TabsContent>
 
 function Metric({
   icon: Icon,
@@ -546,6 +581,66 @@ function Metric({
         <div className="text-xs text-slate-400">{label}</div>
       </CardContent>
     </Card>
+  );
+}
+
+function LeaguePaymentControl({ registrationId }: { registrationId: string }) {
+  const qc = useQueryClient();
+  const [provider, setProvider] = useState('manual');
+  const [reference, setReference] = useState('');
+  const verificationQ = useQuery({
+    queryKey: ['admin-league-payment', registrationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('league_payment_verifications' as never)
+        .select('*')
+        .eq('league_registration_id', registrationId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { status?: string; provider?: string; provider_reference?: string } | null;
+    },
+  });
+  const verify = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('verify_league_payment', {
+        p_registration_id: registrationId,
+        p_provider: provider,
+        p_provider_reference: reference,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Payment verified and sent for approval');
+      qc.invalidateQueries({ queryKey: ['admin-league-payment', registrationId] });
+      qc.invalidateQueries({ queryKey: ['admin-leagues'] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Payment verification failed'),
+  });
+
+  if (verificationQ.data?.status === 'verified') {
+    return <span className="self-center text-sm text-emerald-300">Payment verified: {verificationQ.data.provider}</span>;
+  }
+
+  return (
+    <div className="flex w-full flex-wrap items-center gap-2 border-t border-emerald-950 pt-3">
+      <Input
+        aria-label="Payment provider"
+        className="h-9 max-w-40 bg-slate-900"
+        value={provider}
+        onChange={(event) => setProvider(event.target.value)}
+        placeholder="Provider"
+      />
+      <Input
+        aria-label="Payment reference"
+        className="h-9 min-w-52 flex-1 bg-slate-900"
+        value={reference}
+        onChange={(event) => setReference(event.target.value)}
+        placeholder="Provider payment reference"
+      />
+      <Button disabled={!provider.trim() || !reference.trim() || verify.isPending} onClick={() => verify.mutate()}>
+        Verify payment
+      </Button>
+    </div>
   );
 }
 

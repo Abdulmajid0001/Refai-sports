@@ -70,7 +70,7 @@ export function LiveViewerPage() {
   const eventsQ = useQuery({
     queryKey: ["live-events", matchId],
     queryFn: async () => {
-      const { data } = await supabase.from("match_events").select("id, minute, extra_minute, type, detail, team_id, created_at").eq("match_id", matchId).order("created_at", { ascending: false });
+      const { data } = await supabase.from("match_events").select("id, minute, extra_minute, type, detail, team_id, created_at").eq("match_id", matchId).in("visibility", ["live", "timeline"]).eq("publication_status", "published").order("created_at", { ascending: false });
       return data ?? [];
     },
   });
@@ -99,7 +99,8 @@ export function LiveViewerPage() {
     const ch = supabase.channel(`viewer-${matchId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "match_events", filter: `match_id=eq.${matchId}` }, (payload) => {
         eventsQ.refetch();
-        const evType = (payload.new as any)?.type;
+        const event = payload.new as { type?: string; visibility?: string; publication_status?: string };
+        const evType = event?.visibility !== 'internal' && event?.publication_status === 'published' ? event.type : undefined;
         if (evType && alertsOn) {
           const label = evType.replace(/_/g, " ");
           setNotifications(prev => [{ type: evType, text: label, time: Date.now() }, ...prev.slice(0, 20)]);
@@ -507,4 +508,3 @@ function getEventColor(type: string) {
     default: return "bg-gray-800 text-white/60";
   }
 }
-

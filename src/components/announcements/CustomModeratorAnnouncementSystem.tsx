@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useBGE } from "../use-bge";
+import type { BGEDisplayMode } from "../types";
 
 interface CMASProps {
   matchId: string;
@@ -19,6 +20,8 @@ interface CMASProps {
 type AnnouncementType = "hydration" | "weather" | "match_paused" | "emergency" | "technical" | "general" | "score_update" | "time_check";
 type DisplayMode = "popup" | "banner" | "half_screen" | "full_screen" | "ticker";
 type Priority = "low" | "normal" | "high" | "urgent";
+
+const toBgeDisplayMode = (mode: DisplayMode): BGEDisplayMode => mode === "banner" ? "bottom_banner" : mode;
 
 const ANNOUNCEMENT_TEMPLATES: Record<AnnouncementType, { headline: string; message: string; icon: any; color: string }> = {
   hydration: {
@@ -104,7 +107,7 @@ export function CustomModeratorAnnouncementSystem({ matchId }: CMASProps) {
   const handlePushAnnouncement = () => {
     pushGraphic(
       "announcement",
-      displayMode,
+      toBgeDisplayMode(displayMode),
       {
         type,
         headline: headline || template.headline,
@@ -126,7 +129,7 @@ export function CustomModeratorAnnouncementSystem({ matchId }: CMASProps) {
     const t = ANNOUNCEMENT_TEMPLATES[quickType];
     pushGraphic(
       "announcement",
-      "banner",
+      "bottom_banner",
       {
         type: quickType,
         headline: t.headline,
