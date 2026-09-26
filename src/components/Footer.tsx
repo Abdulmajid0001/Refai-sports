@@ -16,7 +16,7 @@ export function Footer() {
           { to: "/matches", label: "Schedule" },
         ]} />
         <FooterCol title="Get involved" links={[
-          { to: "/register/team", label: "Register a team" },
+          { to: "/dashboard/team/register", label: "Register a team" },
           { to: "/dashboard/leagues", label: "Create a league" },
           { to: "/about", label: "About Refai" },
         ]} />
