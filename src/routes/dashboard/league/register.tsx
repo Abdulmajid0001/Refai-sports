@@ -2,7 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 
 import { RoleGuard } from '@/components/auth/RoleGuard';
-import { LeagueRegistrationForm } from '@/components/onboarding/LeagueRegistrationForm';
 import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/dashboard/league/register')({
@@ -29,7 +28,14 @@ function LeagueRegisterPage() {
           </Button>
         </div>
 
-        <LeagueRegistrationForm />
+        <div className="rounded-md border bg-muted/20 p-6">
+          <p className="text-sm text-muted-foreground">
+            League registration now begins with the subscription and payment workflow so pricing, verification, and approval remain server-controlled.
+          </p>
+          <Button asChild className="mt-4">
+            <a href="/register/league">Start league registration</a>
+          </Button>
+        </div>
       </div>
     </RoleGuard>
   );
