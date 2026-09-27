@@ -27,7 +27,7 @@ begin
   elsif v_invite_token is not null and exists (
     select 1
     from public.staff_invitations invitation
-    where invitation.token_hash = encode(digest(v_invite_token, 'sha256'), 'hex')
+    where invitation.token_hash = encode(extensions.digest(v_invite_token, 'sha256'), 'hex')
       and invitation.accepted_at is null
       and invitation.revoked_at is null
       and invitation.expires_at > now()
@@ -72,7 +72,7 @@ begin
     elsif v_invite_token is not null and exists (
       select 1
       from public.staff_invitations invitation
-      where invitation.token_hash = encode(digest(v_invite_token, 'sha256'), 'hex')
+      where invitation.token_hash = encode(extensions.digest(v_invite_token, 'sha256'), 'hex')
         and invitation.accepted_at is null
         and invitation.revoked_at is null
         and invitation.expires_at > now()
@@ -138,7 +138,7 @@ begin
   end if;
 
   insert into public.staff_invitations (league_registration_id, match_id, email, role, permissions, token_hash, expires_at, created_by)
-  values (p_league_registration_id, p_match_id, lower(trim(p_email)), p_role, coalesce(p_permissions, '[]'::jsonb), encode(digest(v_token, 'sha256'), 'hex'), p_expires_at, auth.uid())
+  values (p_league_registration_id, p_match_id, lower(trim(p_email)), p_role, coalesce(p_permissions, '[]'::jsonb), encode(extensions.digest(v_token, 'sha256'), 'hex'), p_expires_at, auth.uid())
   returning staff_invitations.id into v_id;
 
   return query select v_id, v_token, p_expires_at;
