@@ -103,6 +103,17 @@ function LeagueDashboard() {
     },
   });
 
+  useQuery({
+    queryKey: ['subscription-notification-refresh', user?.id],
+    enabled: !!user && profile?.role === 'league_owner',
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('refresh_my_subscription_notifications' as never);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const primaryLeague = leagues?.[0];
 
   if (!isLoading && (!primaryLeague || primaryLeague.status !== 'approved' || profile?.account_status !== 'approved')) {
