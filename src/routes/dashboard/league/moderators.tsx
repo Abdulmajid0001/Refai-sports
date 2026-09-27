@@ -109,9 +109,9 @@ function LeagueModeratorsPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Moderators</h1>
+            <h1 className="text-2xl font-bold">League Invitations</h1>
             <p className="text-muted-foreground">
-              Invite the people who operate live matches. Roles, permissions and expiry are enforced by the database.
+              Invite team owners, match staff, sponsors, and viewers. Roles, permissions, email binding, and expiry are enforced by the database.
             </p>
           </div>
 
@@ -124,7 +124,7 @@ function LeagueModeratorsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldPlus className="h-5 w-5 text-primary" />
-              Invite Match Staff
+              Invite League People
             </CardTitle>
           </CardHeader>
 
@@ -144,12 +144,16 @@ function LeagueModeratorsPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general_moderator">General Moderator</SelectItem>
+                    <SelectItem value="team_owner">Team Owner</SelectItem>
+                    <SelectItem value="coach">Coach</SelectItem>
                     <SelectItem value="moderator">Moderator</SelectItem>
                     <SelectItem value="assistant_moderator">Assistant Moderator</SelectItem>
                     <SelectItem value="commentator">Commentator</SelectItem>
                     <SelectItem value="camera_operator">Camera Operator</SelectItem>
                     <SelectItem value="analyst">Analyst</SelectItem>
                     <SelectItem value="statistician">Statistician</SelectItem>
+                    <SelectItem value="viewer">Viewer / Fan</SelectItem>
+                    <SelectItem value="sponsor">Sponsor / Advertiser</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -207,9 +211,9 @@ function LeagueModeratorsPage() {
 
           <CardContent className="space-y-3">
             {(invitations ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No staff invitations yet.</p>
+              <p className="text-sm text-muted-foreground">No league invitations yet.</p>
             ) : (
-              invitations!.map((invitation: any) => (
+              invitations!.map((invitation) => (
                 <div key={invitation.id} className="rounded-md border p-3">
                   <div className="font-medium">{invitation.role.replace(/_/g, ' ')}</div>
                   <div className="text-sm text-muted-foreground">
