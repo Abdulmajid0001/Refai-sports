@@ -4,6 +4,7 @@ import {
   ShieldCheck,
   Images,
   Megaphone,
+  CreditCard,
   Home,
   Lock,
 } from "lucide-react";
@@ -53,6 +54,7 @@ export function AdminLayout() {
           <SideLink to="/admin" icon={<Home className="h-4 w-4" />}>Overview</SideLink>
           <SideLink to="/admin/slideshow" icon={<Images className="h-4 w-4" />}>Homepage slideshow</SideLink>
           <SideLink to="/admin/ads" icon={<Megaphone className="h-4 w-4" />}>Ads & overlays</SideLink>
+          <SideLink to="/admin/plans" icon={<CreditCard className="h-4 w-4" />}>Subscription plans</SideLink>
         </aside>
         <div>
           <Outlet />
