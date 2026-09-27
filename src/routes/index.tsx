@@ -35,7 +35,7 @@ const QUICK_CARDS = [
     desc: "Apply to a competition and onboard players.",
   },
   {
-    to: "/dashboard/league/register",
+    to: "/register/league",
     icon: Building2,
     title: "Run a league",
     desc: "Create a league, set rules, manage matches.",
