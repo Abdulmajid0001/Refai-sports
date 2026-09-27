@@ -77,18 +77,10 @@ const modules = [
 ];
 
 function LeagueDashboard() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const location = useLocation();
 
   const pathname = location.pathname.replace(/\/$/, '');
-
-  if (pathname !== '/dashboard/league') {
-    return (
-      <RoleGuard allow="league_owner" requireApproved={false}>
-        <Outlet />
-      </RoleGuard>
-    );
-  }
 
   const { data: leagues, isLoading } = useQuery({
     queryKey: ['league-registrations', user?.id],
@@ -105,7 +97,30 @@ function LeagueDashboard() {
     },
   });
 
-  const primaryLeague = leagues?.[0] as any | undefined;
+  const primaryLeague = leagues?.[0];
+
+  if (!isLoading && (!primaryLeague || primaryLeague.status !== 'approved' || profile?.account_status !== 'approved')) {
+    return (
+      <RoleGuard allow="league_owner" requireApproved={false}>
+        <div className="mx-auto max-w-2xl space-y-4 py-12">
+          <h1 className="text-2xl font-bold">Registration Status</h1>
+          <Card>
+            <CardHeader><CardTitle>{primaryLeague?.league_name ?? 'League Owner Registration'}</CardTitle></CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <p>Payment and Super Admin approval are required before league management is enabled.</p>
+              <div>Registration: <strong className="capitalize text-foreground">{String(primaryLeague?.status ?? 'pending_registration').replace(/_/g, ' ')}</strong></div>
+              <div>Account: <strong className="capitalize text-foreground">{String(profile?.account_status ?? 'pending_approval').replace(/_/g, ' ')}</strong></div>
+              <p>You will receive platform access only after payment is verified and the registration is approved.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </RoleGuard>
+    );
+  }
+
+  if (pathname !== '/dashboard/league') {
+    return <RoleGuard allow="league_owner" requireApproved={false}><Outlet /></RoleGuard>;
+  }
 
   return (
     <RoleGuard allow="league_owner" requireApproved={false}>
@@ -176,7 +191,7 @@ function LeagueDashboard() {
                 </Button>
               </div>
             ) : (
-              leagues!.map((league: any) => (
+              leagues!.map((league) => (
                 <div
                   key={league.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
