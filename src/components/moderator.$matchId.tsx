@@ -261,6 +261,27 @@ export function ModeratorControlCenter() {
     else toast.success(`Alert sent: ${text}`);
   }
 
+  function downloadMatchReport() {
+    const stamp = new Date().toLocaleString();
+    const lines = [
+      "REFAI MATCH INCIDENT REPORT",
+      `Generated: ${stamp}`,
+      `Match: ${home?.name ?? "Home"} ${m.home_score} - ${m.away_score} ${away?.name ?? "Away"}`,
+      `Status: ${m.status}`,
+      "",
+      "INCIDENTS",
+      ...(eventsQ.data ?? []).slice().reverse().map((event: any) => `${event.minute ?? "-"}' | ${String(event.type ?? "note").replace(/_/g, " ")} | ${event.team_id === m.home_team_id ? home?.name : event.team_id === m.away_team_id ? away?.name : "-"} | ${event.detail ?? "-"}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `refai-match-report-${matchId}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Match report downloaded");
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gray-950 text-white">
       {/* Top bar */}
@@ -740,7 +761,7 @@ export function ModeratorControlCenter() {
               <Card className="border-gray-800 bg-gray-900">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-sm text-amber-300">Incident Archive</CardTitle>
-                  <Button size="sm" variant="outline" className="border-gray-700 text-xs" onClick={() => toast("Report generation coming soon")}>
+                  <Button size="sm" variant="outline" className="border-gray-700 text-xs" onClick={downloadMatchReport}>
                     <Download className="mr-1 h-4 w-4" />Generate Report
                   </Button>
                 </CardHeader>
