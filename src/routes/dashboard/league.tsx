@@ -74,6 +74,12 @@ const modules = [
     icon: Settings,
     desc: 'Edit branding, venues, automation, AI preferences, subscription and safe settings.',
   },
+  {
+    title: 'Subscription',
+    href: '/dashboard/league/plan',
+    icon: Wallet,
+    desc: 'View or request a change to your subscription plan.',
+  },
 ];
 
 function LeagueDashboard() {
