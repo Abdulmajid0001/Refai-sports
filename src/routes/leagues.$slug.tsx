@@ -76,6 +76,16 @@ function LeagueDetail() {
     },
   });
 
+  const { data: scorers, isLoading: scorersLoading } = useQuery({
+    queryKey: ["league-top-scorers", league?.id],
+    enabled: !!league?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_league_top_scorers" as never, { p_league_id: league!.id } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ player_name: string; team_name: string; goals: number }>;
+    },
+  });
+
   if (isLoading) return <PageShell><div className="mx-auto max-w-7xl px-4 py-10">Loading…</div></PageShell>;
   if (!league) return <PageShell><div className="mx-auto max-w-7xl px-4 py-10">League not found.</div></PageShell>;
 
@@ -119,8 +129,15 @@ function LeagueDetail() {
 
           <TabsContent value="scorers" className="mt-4">
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                Top scorer statistics coming soon.
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-left"><tr><th className="px-3 py-2">#</th><th className="px-3 py-2">Player</th><th className="px-3 py-2">Team</th><th className="px-3 py-2 text-right">Goals</th></tr></thead>
+                  <tbody>
+                    {(scorers ?? []).map((scorer, index) => <tr key={`${scorer.player_name}-${scorer.team_name}`} className="border-t"><td className="px-3 py-2 text-muted-foreground">{index + 1}</td><td className="px-3 py-2 font-medium">{scorer.player_name}</td><td className="px-3 py-2 text-muted-foreground">{scorer.team_name}</td><td className="px-3 py-2 text-right font-semibold">{scorer.goals}</td></tr>)}
+                    {!scorersLoading && (scorers ?? []).length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">No goals have been recorded yet.</td></tr>}
+                    {scorersLoading && <tr><td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">Loading scorers...</td></tr>}
+                  </tbody>
+                </table>
               </CardContent>
             </Card>
           </TabsContent>
