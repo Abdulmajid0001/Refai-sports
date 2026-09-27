@@ -1,9 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { PageShell } from '@/components/PageShell';
-import { LeagueRegistrationCheckout } from '@/components/onboarding/LeagueRegistrationCheckout';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/register/league/start')({ component: LeagueRegistrationStartPage });
-
-function LeagueRegistrationStartPage() {
-  return <PageShell><div className="mx-auto max-w-4xl py-8"><LeagueRegistrationCheckout /></div></PageShell>;
-}
+export const Route = createFileRoute('/register/league/start')({
+  beforeLoad: () => { throw redirect({ to: '/register/league' }); },
+});
