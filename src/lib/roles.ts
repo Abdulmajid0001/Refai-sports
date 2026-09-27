@@ -50,6 +50,9 @@ export const roleDashboards = {
 } as const;
 
 export const inviteOnlyRoles: UserRole[] = [
+  'team_owner',
+  'viewer',
+  'sponsor',
   'general_moderator',
   'moderator',
   'assistant_moderator',
@@ -59,7 +62,7 @@ export const inviteOnlyRoles: UserRole[] = [
   'statistician',
   'coach',
 ];
-export const publicSignupRoles: UserRole[] = ['league_owner', 'team_owner', 'viewer', 'sponsor'];
+export const publicSignupRoles: UserRole[] = ['league_owner'];
 
 export function dashboardForRole(role?: UserRole | null) {
   return role ? roleDashboards[role] : '/auth';
