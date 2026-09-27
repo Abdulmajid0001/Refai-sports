@@ -1,0 +1,890 @@
+-- RefAI consolidated pilot fix
+-- Prerequisite: the original RefAI migrations through 202607010001 must already be applied.
+-- Run this file once in the Supabase SQL Editor. Do not also run the individual 20260921 or 202609260001 migration files.
+
+create extension if not exists pgcrypto;
+
+alter type public.app_role add value if not exists 'general_moderator';
+alter type public.app_role add value if not exists 'assistant_moderator';
+alter type public.app_role add value if not exists 'analyst';
+alter type public.app_role add value if not exists 'statistician';
+
+-- Make new enum labels usable by statements below even when the SQL editor wraps execution in a transaction.
+commit;
+
+-- Source: 202609210001_secure_staff_invitations_and_event_publication.sql (remainder)
+create table if not exists public.staff_invitations (
+  id uuid primary key default gen_random_uuid(),
+  league_registration_id uuid not null references public.league_registrations(id) on delete cascade,
+  match_id uuid references public.matches(id) on delete cascade,
+  email text not null,
+  role public.app_role not null,
+  permissions jsonb not null default '[]'::jsonb,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  revoked_at timestamptz,
+  created_by uuid not null references public.profiles(id),
+  created_at timestamptz not null default now(),
+  check (role in ('general_moderator', 'moderator', 'assistant_moderator', 'commentator', 'camera_operator', 'analyst', 'statistician'))
+);
+
+create index if not exists staff_invitations_league_idx on public.staff_invitations (league_registration_id, created_at desc);
+create index if not exists staff_invitations_email_idx on public.staff_invitations (lower(email));
+
+create table if not exists public.match_staff_assignments (
+  id uuid primary key default gen_random_uuid(),
+  invitation_id uuid unique references public.staff_invitations(id) on delete set null,
+  league_registration_id uuid not null references public.league_registrations(id) on delete cascade,
+  match_id uuid references public.matches(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  role public.app_role not null,
+  permissions jsonb not null default '[]'::jsonb,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists match_staff_assignments_active_idx
+  on public.match_staff_assignments (league_registration_id, match_id, user_id, role)
+  where revoked_at is null;
+
+create table if not exists public.match_action_audit (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid references public.matches(id) on delete cascade,
+  actor_id uuid references public.profiles(id) on delete set null,
+  action_type text not null,
+  entity_type text not null,
+  entity_id uuid,
+  previous_value jsonb,
+  new_value jsonb,
+  source text not null default 'manual' check (source in ('manual', 'ai', 'sensor', 'system')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.match_events add column if not exists visibility text not null default 'live'
+  check (visibility in ('live', 'timeline', 'internal'));
+alter table public.match_events add column if not exists publication_status text not null default 'published'
+  check (publication_status in ('pending', 'confirmed', 'rejected', 'published'));
+alter table public.match_events add column if not exists source text not null default 'manual'
+  check (source in ('manual', 'ai', 'sensor', 'system'));
+alter table public.match_events add column if not exists client_event_id uuid;
+create unique index if not exists match_events_client_event_idx
+  on public.match_events (match_id, client_event_id) where client_event_id is not null;
+
+-- A user may update contact details, but role and approval state are server-owned.
+create or replace function public.guard_profile_privileges()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' and new.id = auth.uid() then
+    if new.role not in ('league_owner', 'team_owner', 'sponsor', 'viewer') then
+      new.role := 'viewer';
+    end if;
+    if new.role <> 'viewer' then
+      new.account_status := 'pending_verification';
+    else
+      new.account_status := 'approved';
+    end if;
+  elsif tg_op = 'UPDATE'
+    and (new.role is distinct from old.role or new.account_status is distinct from old.account_status)
+    and coalesce(current_setting('app.allow_role_update', true), 'false') <> 'true'
+    and public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin can change a role or approval status';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_privileges on public.profiles;
+create trigger profiles_guard_privileges
+before insert or update on public.profiles
+for each row execute function public.guard_profile_privileges();
+
+create or replace function public.create_staff_invitation(
+  p_league_registration_id uuid,
+  p_email text,
+  p_role public.app_role,
+  p_permissions jsonb default '[]'::jsonb,
+  p_match_id uuid default null,
+  p_expires_at timestamptz default now() + interval '7 days'
+)
+returns table (id uuid, token text, expires_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_token text := encode(gen_random_bytes(32), 'hex');
+  v_id uuid;
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if p_role not in ('general_moderator', 'moderator', 'assistant_moderator', 'commentator', 'camera_operator', 'analyst', 'statistician') then
+    raise exception 'This role must be invited';
+  end if;
+  if p_expires_at <= now() then raise exception 'Invitation expiry must be in the future'; end if;
+  if not exists (
+    select 1 from public.league_registrations
+    where id = p_league_registration_id
+      and (owner_id = auth.uid() or public.current_profile_role() = 'super_admin')
+  ) then raise exception 'You cannot invite staff for this league'; end if;
+
+  insert into public.staff_invitations (league_registration_id, match_id, email, role, permissions, token_hash, expires_at, created_by)
+  values (p_league_registration_id, p_match_id, lower(trim(p_email)), p_role, coalesce(p_permissions, '[]'::jsonb), encode(digest(v_token, 'sha256'), 'hex'), p_expires_at, auth.uid())
+  returning staff_invitations.id into v_id;
+
+  return query select v_id, v_token, p_expires_at;
+end;
+$$;
+
+create or replace function public.accept_staff_invitation(p_token text)
+returns table (role public.app_role, league_registration_id uuid, match_id uuid, permissions jsonb)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_invite public.staff_invitations%rowtype;
+begin
+  if auth.uid() is null then raise exception 'Sign in before accepting an invitation'; end if;
+  select * into v_invite from public.staff_invitations
+  where token_hash = encode(digest(p_token, 'sha256'), 'hex')
+  for update;
+  if not found then raise exception 'Invitation is invalid'; end if;
+  if v_invite.revoked_at is not null or v_invite.accepted_at is not null or v_invite.expires_at <= now() then
+    raise exception 'Invitation is no longer active';
+  end if;
+  if lower(coalesce(auth.jwt() ->> 'email', '')) <> lower(v_invite.email) then
+    raise exception 'This invitation belongs to a different email address';
+  end if;
+
+  perform set_config('app.allow_role_update', 'true', true);
+  update public.profiles set role = v_invite.role, account_status = 'approved', updated_at = now() where id = auth.uid();
+  update public.staff_invitations set accepted_at = now() where id = v_invite.id;
+  insert into public.match_staff_assignments (invitation_id, league_registration_id, match_id, user_id, role, permissions, expires_at)
+  values (v_invite.id, v_invite.league_registration_id, v_invite.match_id, auth.uid(), v_invite.role, v_invite.permissions, v_invite.expires_at);
+  return query select v_invite.role, v_invite.league_registration_id, v_invite.match_id, v_invite.permissions;
+end;
+$$;
+
+create or replace function public.audit_match_event()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.match_action_audit (match_id, actor_id, action_type, entity_type, entity_id, previous_value, new_value, source)
+  values (
+    coalesce(new.match_id, old.match_id), auth.uid(), lower(tg_op) || '_event', 'match_event', coalesce(new.id, old.id),
+    case when tg_op = 'INSERT' then null else to_jsonb(old) end,
+    case when tg_op = 'DELETE' then null else to_jsonb(new) end,
+    coalesce(case when tg_op = 'DELETE' then old.source else new.source end, 'manual')
+  );
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists match_events_audit on public.match_events;
+create trigger match_events_audit
+after insert or update or delete on public.match_events
+for each row execute function public.audit_match_event();
+
+alter table public.staff_invitations enable row level security;
+alter table public.match_staff_assignments enable row level security;
+alter table public.match_action_audit enable row level security;
+
+create policy "staff_invitations_owner_or_admin" on public.staff_invitations
+for select using (created_by = auth.uid() or public.current_profile_role() = 'super_admin');
+create policy "staff_assignments_owner_assignee_or_admin" on public.match_staff_assignments
+for select using (
+  user_id = auth.uid() or public.current_profile_role() = 'super_admin' or exists (
+    select 1 from public.league_registrations lr where lr.id = league_registration_id and lr.owner_id = auth.uid()
+  )
+);
+create policy "match_action_audit_authorized_read" on public.match_action_audit
+for select using (
+  actor_id = auth.uid() or public.current_profile_role() = 'super_admin' or exists (
+    select 1 from public.match_staff_assignments msa
+    where msa.match_id = match_action_audit.match_id and msa.user_id = auth.uid() and msa.revoked_at is null
+  )
+);
+
+revoke all on function public.create_staff_invitation(uuid, text, public.app_role, jsonb, uuid, timestamptz) from public;
+revoke all on function public.accept_staff_invitation(text) from public;
+grant execute on function public.create_staff_invitation(uuid, text, public.app_role, jsonb, uuid, timestamptz) to authenticated;
+grant execute on function public.accept_staff_invitation(text) to authenticated;
+
+create or replace function public.has_match_operation_access(p_match_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.current_profile_role() = 'super_admin'
+    or exists (
+      select 1
+      from public.match_staff_assignments msa
+      where msa.match_id = p_match_id
+        and msa.user_id = auth.uid()
+        and msa.revoked_at is null
+        and (msa.starts_at is null or msa.starts_at <= now())
+        and (msa.expires_at is null or msa.expires_at > now())
+    )
+$$;
+
+revoke all on function public.has_match_operation_access(uuid) from public;
+grant execute on function public.has_match_operation_access(uuid) to authenticated;
+
+-- Source: 202609210002_operational_activation_and_fixtures.sql
+-- Canonical activation bridge: registrations become operational public entities only after approval.
+-- Existing operational rows remain intact; this migration only adds traceable links.
+
+alter table public.leagues
+  add column if not exists league_registration_id uuid unique references public.league_registrations(id) on delete set null;
+alter table public.teams
+  add column if not exists team_registration_id uuid unique references public.team_registrations(id) on delete set null;
+alter table public.matches
+  add column if not exists league_registration_id uuid references public.league_registrations(id) on delete set null;
+
+create index if not exists leagues_registration_idx on public.leagues (league_registration_id);
+create index if not exists teams_registration_idx on public.teams (team_registration_id);
+create index if not exists matches_registration_idx on public.matches (league_registration_id, kickoff_at);
+
+create or replace function public.has_match_operation_access(p_match_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.current_profile_role() = 'super_admin'
+    or exists (
+      select 1
+      from public.match_staff_assignments msa
+      join public.matches m on m.id = p_match_id
+      where (msa.match_id = p_match_id or (msa.match_id is null and msa.league_registration_id = m.league_registration_id))
+        and msa.user_id = auth.uid()
+        and msa.revoked_at is null
+        and (msa.starts_at is null or msa.starts_at <= now())
+        and (msa.expires_at is null or msa.expires_at > now())
+    )
+$$;
+
+create or replace function public.registration_slug(p_name text, p_id uuid)
+returns text
+language sql
+immutable
+set search_path = public
+as $$
+  select trim(both '-' from regexp_replace(lower(coalesce(p_name, 'refai')), '[^a-z0-9]+', '-', 'g'))
+    || '-' || left(p_id::text, 8)
+$$;
+
+create or replace function public.activate_league_registration(p_registration_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_registration public.league_registrations%rowtype;
+  v_league_id uuid;
+begin
+  if auth.uid() is null or public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin can activate a league';
+  end if;
+
+  select * into v_registration
+  from public.league_registrations
+  where id = p_registration_id
+  for update;
+  if not found then raise exception 'League registration not found'; end if;
+  if v_registration.status <> 'approved' then
+    raise exception 'Approve the registration before activation';
+  end if;
+
+  select id into v_league_id from public.leagues
+  where league_registration_id = p_registration_id;
+
+  if v_league_id is null then
+    insert into public.leagues (
+      name, slug, logo_url, description, format, created_by, league_registration_id
+    ) values (
+      v_registration.league_name,
+      public.registration_slug(v_registration.league_name, v_registration.id),
+      v_registration.logo_url,
+      v_registration.description,
+      coalesce(v_registration.football_formats[1], '5-aside'),
+      v_registration.owner_id,
+      v_registration.id
+    )
+    returning id into v_league_id;
+  end if;
+
+  insert into public.league_wallets (league_registration_id, owner_id)
+  values (p_registration_id, v_registration.owner_id)
+  on conflict do nothing;
+
+  return v_league_id;
+end;
+$$;
+
+create or replace function public.activate_team_registration(p_team_registration_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_registration public.team_registrations%rowtype;
+  v_league_id uuid;
+  v_team_id uuid;
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+
+  select * into v_registration
+  from public.team_registrations
+  where id = p_team_registration_id
+  for update;
+  if not found then raise exception 'Team registration not found'; end if;
+  if v_registration.status <> 'approved' then
+    raise exception 'Approve the team before activation';
+  end if;
+  if not exists (
+    select 1 from public.league_registrations
+    where id = v_registration.league_registration_id
+      and (owner_id = auth.uid() or public.current_profile_role() = 'super_admin')
+  ) then raise exception 'You cannot activate this team'; end if;
+
+  select id into v_league_id from public.leagues
+  where league_registration_id = v_registration.league_registration_id;
+  if v_league_id is null then
+    raise exception 'Activate the league before activating its teams';
+  end if;
+
+  select id into v_team_id from public.teams
+  where team_registration_id = p_team_registration_id;
+  if v_team_id is null then
+    insert into public.teams (
+      name, slug, logo_url, league_id, created_by, team_registration_id
+    ) values (
+      v_registration.team_name,
+      public.registration_slug(v_registration.team_name, v_registration.id),
+      v_registration.logo_url,
+      v_league_id,
+      v_registration.owner_id,
+      v_registration.id
+    )
+    returning id into v_team_id;
+  end if;
+
+  return v_team_id;
+end;
+$$;
+
+create or replace function public.create_operational_match(
+  p_league_registration_id uuid,
+  p_home_team_id uuid,
+  p_away_team_id uuid,
+  p_kickoff_at timestamptz,
+  p_venue text,
+  p_matchday integer default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_league_id uuid;
+  v_match_id uuid;
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if p_home_team_id = p_away_team_id then raise exception 'Home and away teams must differ'; end if;
+  if p_kickoff_at <= now() - interval '1 day' then raise exception 'Kickoff cannot be more than one day in the past'; end if;
+  if not exists (
+    select 1 from public.league_registrations
+    where id = p_league_registration_id
+      and status = 'approved'
+      and (owner_id = auth.uid() or public.current_profile_role() = 'super_admin')
+  ) then raise exception 'You cannot schedule a match for this league'; end if;
+
+  select id into v_league_id from public.leagues
+  where league_registration_id = p_league_registration_id;
+  if v_league_id is null then raise exception 'League is not activated'; end if;
+  if not exists (select 1 from public.teams where id = p_home_team_id and league_id = v_league_id)
+    or not exists (select 1 from public.teams where id = p_away_team_id and league_id = v_league_id)
+  then raise exception 'Both teams must be active members of this league'; end if;
+
+  insert into public.matches (
+    home_team_id, away_team_id, home_score, away_score, status, kickoff_at, venue, league_id, matchday, league_registration_id
+  ) values (
+    p_home_team_id, p_away_team_id, 0, 0, 'scheduled', p_kickoff_at, nullif(trim(p_venue), ''), v_league_id, p_matchday, p_league_registration_id
+  )
+  returning id into v_match_id;
+  return v_match_id;
+end;
+$$;
+
+revoke all on function public.activate_league_registration(uuid) from public;
+revoke all on function public.activate_team_registration(uuid) from public;
+revoke all on function public.create_operational_match(uuid, uuid, uuid, timestamptz, text, integer) from public;
+grant execute on function public.activate_league_registration(uuid) to authenticated;
+grant execute on function public.activate_team_registration(uuid) to authenticated;
+grant execute on function public.create_operational_match(uuid, uuid, uuid, timestamptz, text, integer) to authenticated;
+
+-- Source: 202609210003_secure_registration_review.sql
+-- Review-state protection. Registration owners may amend their submitted data,
+-- but approval, suspension, reviewer and payment-reference fields are server-owned.
+
+create or replace function public.guard_registration_review_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.current_profile_role() <> 'super_admin'
+    and coalesce(current_setting('app.allow_registration_review', true), 'false') <> 'true'
+    and (
+      new.status is distinct from old.status
+      or new.review_note is distinct from old.review_note
+      or new.reviewed_by is distinct from old.reviewed_by
+      or new.reviewed_at is distinct from old.reviewed_at
+      or (to_jsonb(new) -> 'payment_reference') is distinct from (to_jsonb(old) -> 'payment_reference')
+    )
+  then
+    raise exception 'Registration review fields can only be changed by Super Admin';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists league_registration_review_guard on public.league_registrations;
+create trigger league_registration_review_guard
+before update on public.league_registrations
+for each row execute function public.guard_registration_review_fields();
+
+drop trigger if exists team_registration_review_guard on public.team_registrations;
+create trigger team_registration_review_guard
+before update on public.team_registrations
+for each row execute function public.guard_registration_review_fields();
+
+create or replace function public.review_league_registration(
+  p_registration_id uuid,
+  p_status public.onboarding_status,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin can review a league registration';
+  end if;
+  if p_status not in ('approved', 'rejected', 'changes_requested', 'suspended') then
+    raise exception 'Invalid review decision';
+  end if;
+  perform set_config('app.allow_registration_review', 'true', true);
+  update public.league_registrations
+  set status = p_status, review_note = nullif(trim(p_note), ''), reviewed_by = auth.uid(), reviewed_at = now(), updated_at = now()
+  where id = p_registration_id;
+  if not found then raise exception 'League registration not found'; end if;
+end;
+$$;
+
+create or replace function public.review_team_registration(
+  p_registration_id uuid,
+  p_status public.onboarding_status,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin can review a team registration';
+  end if;
+  if p_status not in ('approved', 'rejected', 'changes_requested', 'suspended') then
+    raise exception 'Invalid review decision';
+  end if;
+  perform set_config('app.allow_registration_review', 'true', true);
+  update public.team_registrations
+  set status = p_status, review_note = nullif(trim(p_note), ''), reviewed_by = auth.uid(), reviewed_at = now(), updated_at = now()
+  where id = p_registration_id;
+  if not found then raise exception 'Team registration not found'; end if;
+end;
+$$;
+
+revoke all on function public.review_league_registration(uuid, public.onboarding_status, text) from public;
+revoke all on function public.review_team_registration(uuid, public.onboarding_status, text) from public;
+grant execute on function public.review_league_registration(uuid, public.onboarding_status, text) to authenticated;
+grant execute on function public.review_team_registration(uuid, public.onboarding_status, text) to authenticated;
+
+-- Source: 202609210004_payment_verification_gate.sql
+-- Payment confirmation is a separate, auditable workflow. A league cannot be
+-- approved until a Super Admin has verified a provider reference.
+
+create table if not exists public.league_payment_verifications (
+  id uuid primary key default gen_random_uuid(),
+  league_registration_id uuid not null unique references public.league_registrations(id) on delete cascade,
+  provider text not null,
+  provider_reference text not null,
+  amount numeric(14,2),
+  currency text not null default 'NGN',
+  status text not null default 'verified' check (status in ('verified', 'rejected')),
+  verified_by uuid not null references public.profiles(id),
+  verified_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (provider, provider_reference)
+);
+
+alter table public.league_payment_verifications enable row level security;
+
+drop policy if exists "League owners can read payment verification" on public.league_payment_verifications;
+create policy "League owners can read payment verification"
+on public.league_payment_verifications for select to authenticated
+using (
+  public.current_profile_role() = 'super_admin'
+  or exists (
+    select 1 from public.league_registrations lr
+    where lr.id = league_payment_verifications.league_registration_id
+      and lr.owner_id = auth.uid()
+  )
+);
+
+create or replace function public.verify_league_payment(
+  p_registration_id uuid,
+  p_provider text,
+  p_provider_reference text,
+  p_amount numeric default null,
+  p_currency text default 'NGN'
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin can verify a league payment';
+  end if;
+  if nullif(trim(p_provider), '') is null or nullif(trim(p_provider_reference), '') is null then
+    raise exception 'Provider and provider reference are required';
+  end if;
+  if not exists (select 1 from public.league_registrations where id = p_registration_id) then
+    raise exception 'League registration not found';
+  end if;
+
+  insert into public.league_payment_verifications (
+    league_registration_id, provider, provider_reference, amount, currency, status, verified_by, verified_at, updated_at
+  ) values (
+    p_registration_id, trim(p_provider), trim(p_provider_reference), p_amount, upper(trim(coalesce(p_currency, 'NGN'))), 'verified', auth.uid(), now(), now()
+  )
+  on conflict (league_registration_id) do update set
+    provider = excluded.provider,
+    provider_reference = excluded.provider_reference,
+    amount = excluded.amount,
+    currency = excluded.currency,
+    status = 'verified',
+    verified_by = auth.uid(),
+    verified_at = now(),
+    updated_at = now();
+
+  perform set_config('app.allow_registration_review', 'true', true);
+  update public.league_registrations
+  set payment_reference = trim(p_provider_reference),
+      status = case when status = 'pending_payment' then 'pending_approval'::public.onboarding_status else status end,
+      updated_at = now()
+  where id = p_registration_id;
+end;
+$$;
+
+create or replace function public.review_league_registration(
+  p_registration_id uuid,
+  p_status public.onboarding_status,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin can review a league registration';
+  end if;
+  if p_status not in ('approved', 'rejected', 'changes_requested', 'suspended') then
+    raise exception 'Invalid review decision';
+  end if;
+  if p_status = 'approved' and not exists (
+    select 1 from public.league_payment_verifications
+    where league_registration_id = p_registration_id and status = 'verified'
+  ) then
+    raise exception 'Verify the league payment before approving this registration';
+  end if;
+
+  perform set_config('app.allow_registration_review', 'true', true);
+  update public.league_registrations
+  set status = p_status, review_note = nullif(trim(p_note), ''), reviewed_by = auth.uid(), reviewed_at = now(), updated_at = now()
+  where id = p_registration_id;
+  if not found then raise exception 'League registration not found'; end if;
+end;
+$$;
+
+revoke all on function public.verify_league_payment(uuid, text, text, numeric, text) from public;
+grant execute on function public.verify_league_payment(uuid, text, text, numeric, text) to authenticated;
+
+-- Source: 202609210005_enforce_match_operations.sql
+-- Close the remaining direct-write paths for staff invitations and match operations.
+
+create or replace function public.create_staff_invitation(
+  p_league_registration_id uuid,
+  p_email text,
+  p_role public.app_role,
+  p_permissions jsonb default '[]'::jsonb,
+  p_match_id uuid default null,
+  p_expires_at timestamptz default now() + interval '7 days'
+)
+returns table (id uuid, token text, expires_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_token text := encode(gen_random_bytes(32), 'hex');
+  v_id uuid;
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if nullif(trim(p_email), '') is null then raise exception 'An invited email address is required'; end if;
+  if p_role not in ('general_moderator', 'moderator', 'assistant_moderator', 'commentator', 'camera_operator', 'analyst', 'statistician') then
+    raise exception 'This role must be invited';
+  end if;
+  if p_expires_at <= now() or p_expires_at > now() + interval '30 days' then
+    raise exception 'Invitation expiry must be between now and 30 days';
+  end if;
+  if not exists (
+    select 1 from public.league_registrations
+    where id = p_league_registration_id
+      and status = 'approved'
+      and (owner_id = auth.uid() or public.current_profile_role() = 'super_admin')
+  ) then
+    raise exception 'You cannot invite staff for this league';
+  end if;
+  if p_match_id is not null and not exists (
+    select 1 from public.matches
+    where id = p_match_id and league_registration_id = p_league_registration_id
+  ) then
+    raise exception 'The selected match does not belong to this league';
+  end if;
+
+  insert into public.staff_invitations (league_registration_id, match_id, email, role, permissions, token_hash, expires_at, created_by)
+  values (p_league_registration_id, p_match_id, lower(trim(p_email)), p_role, coalesce(p_permissions, '[]'::jsonb), encode(digest(v_token, 'sha256'), 'hex'), p_expires_at, auth.uid())
+  returning staff_invitations.id into v_id;
+
+  return query select v_id, v_token, p_expires_at;
+end;
+$$;
+
+create or replace function public.guard_match_event_write()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_match_id uuid;
+begin
+  v_match_id := case when tg_op = 'DELETE' then old.match_id else new.match_id end;
+  if auth.role() <> 'service_role'
+    and (auth.uid() is null or not public.has_match_operation_access(v_match_id))
+  then
+    raise exception 'You are not assigned to operate this match';
+  end if;
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists match_events_operation_guard on public.match_events;
+create trigger match_events_operation_guard
+before insert or update or delete on public.match_events
+for each row execute function public.guard_match_event_write();
+
+create or replace function public.guard_match_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.role() <> 'service_role'
+    and (auth.uid() is null or not public.has_match_operation_access(old.id))
+  then
+    raise exception 'You are not assigned to operate this match';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists matches_operation_guard on public.matches;
+create trigger matches_operation_guard
+before update on public.matches
+for each row execute function public.guard_match_update();
+
+-- Source: 202609260001_league_owner_only_public_signup.sql
+-- Public account creation is reserved for League Owners. Every other
+-- application role must be granted by an active, email-bound league invitation.
+
+alter table public.staff_invitations drop constraint if exists staff_invitations_role_check;
+alter table public.staff_invitations drop constraint if exists staff_invitations_invitable_role_check;
+alter table public.staff_invitations add constraint staff_invitations_invitable_role_check
+  check (role in (
+    'team_owner', 'coach', 'general_moderator', 'moderator', 'assistant_moderator',
+    'commentator', 'camera_operator', 'analyst', 'statistician', 'viewer', 'sponsor'
+  ));
+
+-- This Auth-user trigger is the enforcement point for all clients, including
+-- requests made directly to Supabase Auth rather than through the web page.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_requested_role text := lower(coalesce(new.raw_user_meta_data ->> 'role', ''));
+  v_invite_token text := new.raw_user_meta_data ->> 'invite_token';
+  v_role public.app_role;
+begin
+  if v_requested_role = 'league_owner' then
+    v_role := 'league_owner';
+  elsif v_invite_token is not null and exists (
+    select 1
+    from public.staff_invitations invitation
+    where invitation.token_hash = encode(digest(v_invite_token, 'sha256'), 'hex')
+      and invitation.accepted_at is null
+      and invitation.revoked_at is null
+      and invitation.expires_at > now()
+      and lower(invitation.email) = lower(new.email)
+  ) then
+    -- The invitation RPC replaces this neutral role with the invited role.
+    v_role := 'viewer';
+  else
+    raise exception 'Only League Owner accounts can be created without a league invitation';
+  end if;
+
+  insert into public.profiles (
+    id, first_name, last_name, display_name, email, phone, role, account_status, mfa_enabled
+  ) values (
+    new.id,
+    nullif(trim(new.raw_user_meta_data ->> 'first_name'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'last_name'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''),
+    new.email,
+    nullif(trim(new.raw_user_meta_data ->> 'phone'), ''),
+    v_role,
+    'pending_verification',
+    false
+  ) on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
+
+create or replace function public.guard_profile_privileges()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_invite_token text := auth.jwt() -> 'user_metadata' ->> 'invite_token';
+begin
+  if tg_op = 'INSERT' and new.id = auth.uid() then
+    if new.role = 'league_owner' then
+      new.account_status := 'pending_verification';
+    elsif v_invite_token is not null and exists (
+      select 1
+      from public.staff_invitations invitation
+      where invitation.token_hash = encode(digest(v_invite_token, 'sha256'), 'hex')
+        and invitation.accepted_at is null
+        and invitation.revoked_at is null
+        and invitation.expires_at > now()
+        and lower(invitation.email) = lower(coalesce(new.email, auth.jwt() ->> 'email', ''))
+    ) then
+      -- The invitation RPC assigns the final role after email confirmation.
+      new.role := 'viewer';
+      new.account_status := 'pending_verification';
+    else
+      raise exception 'Only League Owner accounts can be created without a league invitation';
+    end if;
+  elsif tg_op = 'UPDATE'
+    and (new.role is distinct from old.role or new.account_status is distinct from old.account_status)
+    and coalesce(current_setting('app.allow_role_update', true), 'false') <> 'true'
+    and public.current_profile_role() <> 'super_admin' then
+    raise exception 'Only a Super Admin or invitation acceptance can change a role or approval status';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.create_staff_invitation(
+  p_league_registration_id uuid,
+  p_email text,
+  p_role public.app_role,
+  p_permissions jsonb default '[]'::jsonb,
+  p_match_id uuid default null,
+  p_expires_at timestamptz default now() + interval '7 days'
+)
+returns table (id uuid, token text, expires_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_token text := encode(gen_random_bytes(32), 'hex');
+  v_id uuid;
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if nullif(trim(p_email), '') is null then raise exception 'An invited email address is required'; end if;
+  if p_role not in (
+    'team_owner', 'coach', 'general_moderator', 'moderator', 'assistant_moderator',
+    'commentator', 'camera_operator', 'analyst', 'statistician', 'viewer', 'sponsor'
+  ) then
+    raise exception 'League Owners cannot invite this role';
+  end if;
+  if p_expires_at <= now() or p_expires_at > now() + interval '30 days' then
+    raise exception 'Invitation expiry must be between now and 30 days';
+  end if;
+  if not exists (
+    select 1 from public.league_registrations
+    where id = p_league_registration_id
+      and status = 'approved'
+      and (owner_id = auth.uid() or public.current_profile_role() = 'super_admin')
+  ) then
+    raise exception 'You cannot invite people for this league';
+  end if;
+  if p_match_id is not null and not exists (
+    select 1 from public.matches
+    where id = p_match_id and league_registration_id = p_league_registration_id
+  ) then
+    raise exception 'The selected match does not belong to this league';
+  end if;
+
+  insert into public.staff_invitations (league_registration_id, match_id, email, role, permissions, token_hash, expires_at, created_by)
+  values (p_league_registration_id, p_match_id, lower(trim(p_email)), p_role, coalesce(p_permissions, '[]'::jsonb), encode(digest(v_token, 'sha256'), 'hex'), p_expires_at, auth.uid())
+  returning staff_invitations.id into v_id;
+
+  return query select v_id, v_token, p_expires_at;
+end;
+$$;
