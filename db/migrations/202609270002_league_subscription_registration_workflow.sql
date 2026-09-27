@@ -92,6 +92,8 @@ create table if not exists public.league_plan_change_requests (
 
 alter table public.league_registrations add column if not exists registration_order_id uuid unique references public.league_registration_orders(id) on delete set null;
 alter table public.league_registrations drop constraint if exists league_registrations_subscription_plan_check;
+-- A league can have its original registration order plus later approved plan-change orders.
+alter table public.league_registration_orders drop constraint if exists league_registration_orders_league_registration_id_key;
 
 insert into public.league_subscription_plans (code, name, description, max_teams, max_matches, max_live_matches, max_administrators, features)
 values
@@ -121,6 +123,13 @@ returns boolean language sql stable security definer set search_path = public as
   select auth.uid() is not null and public.current_profile_role() = 'super_admin'
 $$;
 
+drop policy if exists "plans_public_read" on public.league_subscription_plans;
+drop policy if exists "plan_durations_public_read" on public.league_subscription_plan_durations;
+drop policy if exists "plans_admin_write" on public.league_subscription_plans;
+drop policy if exists "plan_durations_admin_write" on public.league_subscription_plan_durations;
+drop policy if exists "orders_owner_or_admin_read" on public.league_registration_orders;
+drop policy if exists "subscriptions_owner_or_admin_read" on public.league_registration_subscriptions;
+drop policy if exists "plan_change_owner_or_admin_read" on public.league_plan_change_requests;
 create policy "plans_public_read" on public.league_subscription_plans for select using (active or public.is_super_admin());
 create policy "plan_durations_public_read" on public.league_subscription_plan_durations for select using (active or public.is_super_admin());
 create policy "plans_admin_write" on public.league_subscription_plans for all to authenticated using (public.is_super_admin()) with check (public.is_super_admin());
@@ -151,16 +160,18 @@ begin
   if not found or v_plan.id is null then raise exception 'The selected plan or duration is unavailable'; end if;
   if v_plan.enforce_capacity and ((v_plan.max_teams is not null and v_teams > v_plan.max_teams) or (v_plan.max_matches is not null and v_matches > v_plan.max_matches)) then raise exception 'The selected plan cannot accommodate this league'; end if;
   insert into public.league_registration_orders (registration_reference, public_token_hash, plan_id, duration_id, expected_amount, currency, payload)
-   values (v_reference, md5(v_token), p_plan_id, p_duration_id, greatest(v_duration.price - v_duration.discount_amount, 0), v_plan.currency, p_payload)
+  values (v_reference, md5(v_token), p_plan_id, p_duration_id, greatest(v_duration.price - v_duration.discount_amount, 0), v_plan.currency, p_payload)
   returning registration_reference, payment_status, registration_status, expected_amount, currency, signup_available_at into registration_reference, payment_status, registration_status, expected_amount, currency, signup_available_at;
   public_token := v_token; return next;
 end; $$;
 
-create or replace function public.get_public_league_registration_order(p_token text)
-returns table (registration_reference text, league_name text, plan_name text, duration_label text, expected_amount numeric, currency text, payment_status text, registration_status text, signup_allowed boolean, signup_available_at timestamptz)
+drop function if exists public.get_public_league_registration_order(text);
+create function public.get_public_league_registration_order(p_token text)
+returns table (registration_reference text, league_name text, plan_name text, duration_label text, expected_amount numeric, currency text, payment_status text, registration_status text, signup_allowed boolean, signup_available_at timestamptz, is_plan_change boolean)
 language sql stable security definer set search_path = public as $$
  select o.registration_reference, o.payload ->> 'league_name', p.name, d.label, o.expected_amount, o.currency, o.payment_status, o.registration_status,
-        (o.payment_status = 'verified' or o.signup_available_at <= now()) and o.registration_status not in ('rejected','cancelled','suspended'), o.signup_available_at
+        (o.payment_status = 'verified' or o.signup_available_at <= now()) and o.registration_status not in ('rejected','cancelled','suspended'), o.signup_available_at,
+        (o.payload ? 'plan_change_request_id')
  from public.league_registration_orders o join public.league_subscription_plans p on p.id=o.plan_id join public.league_subscription_plan_durations d on d.id=o.duration_id
  where o.public_token_hash = md5(p_token);
 $$;
@@ -172,6 +183,9 @@ begin
  update public.league_registration_orders set payment_status='verified', registration_status=case when account_user_id is null then 'payment_verified' else 'awaiting_admin_approval' end, provider=trim(p_provider), provider_reference=trim(p_provider_reference), amount_paid=p_amount, payment_verified_at=now(), updated_at=now()
  where id=p_order_id and upper(currency)=upper(p_currency) and expected_amount=p_amount;
  if not found then raise exception 'Payment amount or currency does not match this registration order'; end if;
+ update public.league_plan_change_requests
+ set status='payment_verified', updated_at=now()
+ where payment_order_id=p_order_id and status='payment_pending';
 end; $$;
 
 create or replace function public.request_league_plan_change(p_league_registration_id uuid, p_plan_id uuid, p_duration_id uuid, p_note text default null)
@@ -185,12 +199,51 @@ begin
   return v_id;
 end; $$;
 
+create or replace function public.create_league_plan_change_payment_order(p_request_id uuid)
+returns table (registration_reference text, public_token text, expected_amount numeric, currency text)
+language plpgsql security definer set search_path = public as $$
+declare v_request public.league_plan_change_requests%rowtype; v_plan public.league_subscription_plans%rowtype; v_duration public.league_subscription_plan_durations%rowtype; v_token text := encode(gen_random_bytes(32), 'hex'); v_reference text := 'REG-' || to_char(now(), 'YYYY') || '-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)); v_league_name text;
+begin
+  select * into v_request from public.league_plan_change_requests where id=p_request_id for update;
+  if not found or not exists (select 1 from public.league_registrations where id=v_request.league_registration_id and owner_id=auth.uid() and status='approved') then raise exception 'Only the active League Owner can pay for this plan change'; end if;
+  if v_request.status <> 'approved' then raise exception 'This plan change has not been approved for payment'; end if;
+  select * into v_plan from public.league_subscription_plans where id=v_request.requested_plan_id and active;
+  select * into v_duration from public.league_subscription_plan_durations where id=v_request.requested_duration_id and plan_id=v_plan.id and active;
+  if not found or v_plan.id is null then raise exception 'The approved plan or duration is unavailable'; end if;
+  select league_name into v_league_name from public.league_registrations where id=v_request.league_registration_id;
+  insert into public.league_registration_orders (registration_reference, public_token_hash, account_user_id, league_registration_id, plan_id, duration_id, expected_amount, currency, payload)
+  values (v_reference, md5(v_token), auth.uid(), v_request.league_registration_id, v_plan.id, v_duration.id, greatest(v_duration.price-v_duration.discount_amount, 0), v_plan.currency, jsonb_build_object('league_name', v_league_name, 'plan_change_request_id', v_request.id))
+  returning registration_reference, expected_amount, currency into registration_reference, expected_amount, currency;
+  update public.league_plan_change_requests set status='payment_pending', payment_order_id=(select id from public.league_registration_orders where registration_reference=v_reference), updated_at=now() where id=v_request.id;
+  public_token := v_token;
+  return next;
+end; $$;
+
 create or replace function public.review_league_plan_change(p_request_id uuid, p_approve boolean, p_note text default null)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_super_admin() then raise exception 'Only a Super Admin can review plan changes'; end if;
   update public.league_plan_change_requests set status=case when p_approve then 'approved' else 'rejected' end, admin_note=nullif(trim(p_note),''), reviewed_by=auth.uid(), reviewed_at=now(), updated_at=now() where id=p_request_id and status='pending';
   if not found then raise exception 'Plan change request is not pending'; end if;
+end; $$;
+
+create or replace function public.finalize_league_plan_change(p_request_id uuid, p_approve boolean, p_note text default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_request public.league_plan_change_requests%rowtype; v_months integer; v_plan_code text;
+begin
+  if not public.is_super_admin() then raise exception 'Only a Super Admin can finalize plan changes'; end if;
+  select * into v_request from public.league_plan_change_requests where id=p_request_id for update;
+  if not found or v_request.status <> 'payment_verified' then raise exception 'The plan-change payment has not been verified'; end if;
+  if not p_approve then
+    update public.league_plan_change_requests set status='rejected', admin_note=nullif(trim(p_note),''), reviewed_by=auth.uid(), reviewed_at=now(), updated_at=now() where id=p_request_id;
+    return;
+  end if;
+  select d.months, p.code into v_months, v_plan_code from public.league_subscription_plan_durations d join public.league_subscription_plans p on p.id=d.plan_id where d.id=v_request.requested_duration_id;
+  update public.league_registration_subscriptions
+  set plan_id=v_request.requested_plan_id, duration_id=v_request.requested_duration_id, status='active', starts_at=now(), expires_at=case when v_months is null then null else now()+make_interval(months => v_months) end, updated_at=now()
+  where id=v_request.current_subscription_id;
+  update public.league_registrations set subscription_plan=v_plan_code, updated_at=now() where id=v_request.league_registration_id;
+  update public.league_plan_change_requests set status='completed', admin_note=nullif(trim(p_note),''), reviewed_by=auth.uid(), reviewed_at=now(), updated_at=now() where id=p_request_id;
 end; $$;
 
 create or replace function public.handle_new_user()
@@ -208,6 +261,7 @@ begin
  if v_token is null then raise exception 'League Owner signup requires a valid registration payment flow'; end if;
  select * into v_order from public.league_registration_orders where public_token_hash=md5(v_token) for update;
  if not found or v_order.registration_status in ('rejected','cancelled','suspended') or (v_order.payment_status <> 'verified' and v_order.signup_available_at > now()) then raise exception 'This registration is not ready for account signup'; end if;
+ if lower(new.email) <> lower(coalesce(v_order.payload ->> 'owner_email', '')) then raise exception 'Use the League Owner email entered during registration'; end if;
  insert into public.profiles (id, first_name, last_name, display_name, email, phone, role, account_status, mfa_enabled)
  values (new.id, nullif(trim(new.raw_user_meta_data ->> 'first_name'),''), nullif(trim(new.raw_user_meta_data ->> 'last_name'),''), nullif(trim(new.raw_user_meta_data ->> 'display_name'),''), new.email, nullif(trim(new.raw_user_meta_data ->> 'phone'),''), 'league_owner', 'pending_approval', false) on conflict (id) do nothing;
  select code into v_plan_code from public.league_subscription_plans where id=v_order.plan_id;
@@ -269,6 +323,8 @@ revoke all on function public.verify_league_registration_order_payment(uuid,text
 revoke all on function public.expire_league_subscriptions() from public;
 revoke all on function public.request_league_plan_change(uuid,uuid,uuid,text) from public;
 revoke all on function public.review_league_plan_change(uuid,boolean,text) from public;
+revoke all on function public.create_league_plan_change_payment_order(uuid) from public;
+revoke all on function public.finalize_league_plan_change(uuid,boolean,text) from public;
 grant execute on function public.create_league_registration_order(jsonb, uuid, uuid) to anon, authenticated;
 grant execute on function public.get_public_league_registration_order(text) to anon, authenticated;
 grant execute on function public.list_public_league_subscription_plans() to anon, authenticated;
@@ -276,3 +332,5 @@ grant execute on function public.verify_league_registration_order_payment(uuid,t
 grant execute on function public.expire_league_subscriptions() to authenticated;
 grant execute on function public.request_league_plan_change(uuid,uuid,uuid,text) to authenticated;
 grant execute on function public.review_league_plan_change(uuid,boolean,text) to authenticated;
+grant execute on function public.create_league_plan_change_payment_order(uuid) to authenticated;
+grant execute on function public.finalize_league_plan_change(uuid,boolean,text) to authenticated;
