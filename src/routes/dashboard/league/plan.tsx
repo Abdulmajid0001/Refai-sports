@@ -1,0 +1,21 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { RoleGuard } from '@/components/auth/RoleGuard';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+export const Route = createFileRoute('/dashboard/league/plan')({ component: LeaguePlanPage });
+type Catalog = { plan_id: string; name: string; duration_id: string; duration_label: string; price: number; currency: string };
+
+function LeaguePlanPage() {
+  const { user } = useAuth(); const qc = useQueryClient();
+  const league = useQuery({ queryKey: ['my-league-for-plan', user?.id], enabled: !!user, queryFn: async () => { const { data, error } = await supabase.from('league_registrations').select('id, league_name').eq('owner_id', user!.id).eq('status', 'approved').maybeSingle(); if (error) throw error; return data; } });
+  const catalog = useQuery({ queryKey: ['public-league-subscription-catalog'], queryFn: async () => { const { data, error } = await supabase.rpc('list_public_league_subscription_plans' as never); if (error) throw error; return (data ?? []) as unknown as Catalog[]; } });
+  const requests = useQuery({ queryKey: ['my-plan-change-requests', league.data?.id], enabled: !!league.data?.id, queryFn: async () => { const { data, error } = await supabase.from('league_plan_change_requests' as never).select('*').eq('league_registration_id', league.data!.id).order('created_at', { ascending: false }); if (error) throw error; return data ?? []; } });
+  const request = useMutation({ mutationFn: async (form: FormData) => { const value = String(form.get('selection') || ''); const item = (catalog.data ?? []).find((entry) => `${entry.plan_id}:${entry.duration_id}` === value); if (!league.data?.id || !item) throw new Error('Select a plan and duration.'); const { error } = await supabase.rpc('request_league_plan_change' as never, { p_league_registration_id: league.data.id, p_plan_id: item.plan_id, p_duration_id: item.duration_id, p_note: null } as never); if (error) throw error; }, onSuccess: () => { toast.success('Plan-change request sent for Super Admin approval.'); qc.invalidateQueries({ queryKey: ['my-plan-change-requests'] }); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'Could not request plan change') });
+  return <RoleGuard allow="league_owner" requireApproved><div className="space-y-6"><div><h1 className="text-2xl font-bold">Subscription Plan</h1><p className="text-muted-foreground">Request a change. Payment becomes available only after Super Admin approval.</p></div><Card><CardHeader><CardTitle>Request a plan change</CardTitle></CardHeader><CardContent><form className="flex flex-wrap gap-3" onSubmit={(event) => { event.preventDefault(); request.mutate(new FormData(event.currentTarget)); }}><Select name="selection"><SelectTrigger className="min-w-72"><SelectValue placeholder="Select plan and duration" /></SelectTrigger><SelectContent>{(catalog.data ?? []).map((item) => <SelectItem key={`${item.plan_id}:${item.duration_id}`} value={`${item.plan_id}:${item.duration_id}`}>{item.name} / {item.duration_label} - {item.currency} {Number(item.price).toLocaleString()}</SelectItem>)}</SelectContent></Select><Button disabled={request.isPending}>Request change</Button></form></CardContent></Card><Card><CardHeader><CardTitle>Requests</CardTitle></CardHeader><CardContent className="space-y-2">{(requests.data ?? []).length ? (requests.data as Array<{ id: string; status: string; created_at: string }>).map((item) => <div key={item.id} className="rounded border p-3 text-sm"><strong className="capitalize">{item.status.replace(/_/g, ' ')}</strong><span className="ml-2 text-muted-foreground">{new Date(item.created_at).toLocaleString()}</span></div>) : <p className="text-sm text-muted-foreground">No plan-change requests.</p>}</CardContent></Card></div></RoleGuard>;
+}
