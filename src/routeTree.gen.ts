@@ -51,6 +51,7 @@ import { Route as AdminPlansRouteImport } from './routes/admin/plans'
 import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminModerationRouteImport } from './routes/admin/moderation'
 import { Route as AdminAdsRouteImport } from './routes/admin/ads'
+import { Route as RegisterLeagueStartRouteImport } from './routes/register/league/start'
 import { Route as DashboardViewerSplatRouteImport } from './routes/dashboard/viewer/$'
 import { Route as DashboardTeamRegisterRouteImport } from './routes/dashboard/team/register'
 import { Route as DashboardTeamSplatRouteImport } from './routes/dashboard/team/$'
@@ -60,6 +61,7 @@ import { Route as DashboardLeagueTeamsRouteImport } from './routes/dashboard/lea
 import { Route as DashboardLeagueSettingsRouteImport } from './routes/dashboard/league/settings'
 import { Route as DashboardLeagueRulesRouteImport } from './routes/dashboard/league/rules'
 import { Route as DashboardLeagueRegisterRouteImport } from './routes/dashboard/league/register'
+import { Route as DashboardLeaguePlanRouteImport } from './routes/dashboard/league/plan'
 import { Route as DashboardLeagueModeratorsRouteImport } from './routes/dashboard/league/moderators'
 import { Route as DashboardLeagueMatchesRouteImport } from './routes/dashboard/league/matches'
 import { Route as DashboardLeagueBroadcastRouteImport } from './routes/dashboard/league/broadcast'
@@ -277,6 +279,11 @@ const AdminAdsRoute = AdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AdminRoute,
 } as any)
+const RegisterLeagueStartRoute = RegisterLeagueStartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => RegisterLeagueRoute,
+} as any)
 const DashboardViewerSplatRoute = DashboardViewerSplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -320,6 +327,11 @@ const DashboardLeagueRulesRoute = DashboardLeagueRulesRouteImport.update({
 const DashboardLeagueRegisterRoute = DashboardLeagueRegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => DashboardLeagueRoute,
+} as any)
+const DashboardLeaguePlanRoute = DashboardLeaguePlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => DashboardLeagueRoute,
 } as any)
 const DashboardLeagueModeratorsRoute =
@@ -393,7 +405,7 @@ export interface FileRoutesByFullPath {
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
-  '/register/league': typeof RegisterLeagueRoute
+  '/register/league': typeof RegisterLeagueRouteWithChildren
   '/register/payment': typeof RegisterPaymentRoute
   '/teams/$slug': typeof TeamsSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -404,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/league/broadcast': typeof DashboardLeagueBroadcastRoute
   '/dashboard/league/matches': typeof DashboardLeagueMatchesRoute
   '/dashboard/league/moderators': typeof DashboardLeagueModeratorsRoute
+  '/dashboard/league/plan': typeof DashboardLeaguePlanRoute
   '/dashboard/league/register': typeof DashboardLeagueRegisterRoute
   '/dashboard/league/rules': typeof DashboardLeagueRulesRoute
   '/dashboard/league/settings': typeof DashboardLeagueSettingsRoute
@@ -413,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/team/$': typeof DashboardTeamSplatRoute
   '/dashboard/team/register': typeof DashboardTeamRegisterRoute
   '/dashboard/viewer/$': typeof DashboardViewerSplatRoute
+  '/register/league/start': typeof RegisterLeagueStartRoute
   '/dashboard/team/players/register': typeof DashboardTeamPlayersRegisterRoute
 }
 export interface FileRoutesByTo {
@@ -450,7 +464,7 @@ export interface FileRoutesByTo {
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
-  '/register/league': typeof RegisterLeagueRoute
+  '/register/league': typeof RegisterLeagueRouteWithChildren
   '/register/payment': typeof RegisterPaymentRoute
   '/teams/$slug': typeof TeamsSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -461,6 +475,7 @@ export interface FileRoutesByTo {
   '/dashboard/league/broadcast': typeof DashboardLeagueBroadcastRoute
   '/dashboard/league/matches': typeof DashboardLeagueMatchesRoute
   '/dashboard/league/moderators': typeof DashboardLeagueModeratorsRoute
+  '/dashboard/league/plan': typeof DashboardLeaguePlanRoute
   '/dashboard/league/register': typeof DashboardLeagueRegisterRoute
   '/dashboard/league/rules': typeof DashboardLeagueRulesRoute
   '/dashboard/league/settings': typeof DashboardLeagueSettingsRoute
@@ -470,6 +485,7 @@ export interface FileRoutesByTo {
   '/dashboard/team/$': typeof DashboardTeamSplatRoute
   '/dashboard/team/register': typeof DashboardTeamRegisterRoute
   '/dashboard/viewer/$': typeof DashboardViewerSplatRoute
+  '/register/league/start': typeof RegisterLeagueStartRoute
   '/dashboard/team/players/register': typeof DashboardTeamPlayersRegisterRoute
 }
 export interface FileRoutesById {
@@ -510,7 +526,7 @@ export interface FileRoutesById {
   '/matches/$id': typeof MatchesIdRoute
   '/moderator/$matchId': typeof ModeratorMatchIdRoute
   '/referee/$matchId': typeof RefereeMatchIdRoute
-  '/register/league': typeof RegisterLeagueRoute
+  '/register/league': typeof RegisterLeagueRouteWithChildren
   '/register/payment': typeof RegisterPaymentRoute
   '/teams/$slug': typeof TeamsSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -521,6 +537,7 @@ export interface FileRoutesById {
   '/dashboard/league/broadcast': typeof DashboardLeagueBroadcastRoute
   '/dashboard/league/matches': typeof DashboardLeagueMatchesRoute
   '/dashboard/league/moderators': typeof DashboardLeagueModeratorsRoute
+  '/dashboard/league/plan': typeof DashboardLeaguePlanRoute
   '/dashboard/league/register': typeof DashboardLeagueRegisterRoute
   '/dashboard/league/rules': typeof DashboardLeagueRulesRoute
   '/dashboard/league/settings': typeof DashboardLeagueSettingsRoute
@@ -530,6 +547,7 @@ export interface FileRoutesById {
   '/dashboard/team/$': typeof DashboardTeamSplatRoute
   '/dashboard/team/register': typeof DashboardTeamRegisterRoute
   '/dashboard/viewer/$': typeof DashboardViewerSplatRoute
+  '/register/league/start': typeof RegisterLeagueStartRoute
   '/dashboard/team/players/register': typeof DashboardTeamPlayersRegisterRoute
 }
 export interface FileRouteTypes {
@@ -582,6 +600,7 @@ export interface FileRouteTypes {
     | '/dashboard/league/broadcast'
     | '/dashboard/league/matches'
     | '/dashboard/league/moderators'
+    | '/dashboard/league/plan'
     | '/dashboard/league/register'
     | '/dashboard/league/rules'
     | '/dashboard/league/settings'
@@ -591,6 +610,7 @@ export interface FileRouteTypes {
     | '/dashboard/team/$'
     | '/dashboard/team/register'
     | '/dashboard/viewer/$'
+    | '/register/league/start'
     | '/dashboard/team/players/register'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -639,6 +659,7 @@ export interface FileRouteTypes {
     | '/dashboard/league/broadcast'
     | '/dashboard/league/matches'
     | '/dashboard/league/moderators'
+    | '/dashboard/league/plan'
     | '/dashboard/league/register'
     | '/dashboard/league/rules'
     | '/dashboard/league/settings'
@@ -648,6 +669,7 @@ export interface FileRouteTypes {
     | '/dashboard/team/$'
     | '/dashboard/team/register'
     | '/dashboard/viewer/$'
+    | '/register/league/start'
     | '/dashboard/team/players/register'
   id:
     | '__root__'
@@ -698,6 +720,7 @@ export interface FileRouteTypes {
     | '/dashboard/league/broadcast'
     | '/dashboard/league/matches'
     | '/dashboard/league/moderators'
+    | '/dashboard/league/plan'
     | '/dashboard/league/register'
     | '/dashboard/league/rules'
     | '/dashboard/league/settings'
@@ -707,6 +730,7 @@ export interface FileRouteTypes {
     | '/dashboard/team/$'
     | '/dashboard/team/register'
     | '/dashboard/viewer/$'
+    | '/register/league/start'
     | '/dashboard/team/players/register'
   fileRoutesById: FileRoutesById
 }
@@ -728,7 +752,7 @@ export interface RootRouteChildren {
   MatchesIdRoute: typeof MatchesIdRoute
   ModeratorMatchIdRoute: typeof ModeratorMatchIdRoute
   RefereeMatchIdRoute: typeof RefereeMatchIdRoute
-  RegisterLeagueRoute: typeof RegisterLeagueRoute
+  RegisterLeagueRoute: typeof RegisterLeagueRouteWithChildren
   RegisterPaymentRoute: typeof RegisterPaymentRoute
   MatchesIndexRoute: typeof MatchesIndexRoute
 }
@@ -1029,6 +1053,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/register/league/start': {
+      id: '/register/league/start'
+      path: '/start'
+      fullPath: '/register/league/start'
+      preLoaderRoute: typeof RegisterLeagueStartRouteImport
+      parentRoute: typeof RegisterLeagueRoute
+    }
     '/dashboard/viewer/$': {
       id: '/dashboard/viewer/$'
       path: '/$'
@@ -1090,6 +1121,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/dashboard/league/register'
       preLoaderRoute: typeof DashboardLeagueRegisterRouteImport
+      parentRoute: typeof DashboardLeagueRoute
+    }
+    '/dashboard/league/plan': {
+      id: '/dashboard/league/plan'
+      path: '/plan'
+      fullPath: '/dashboard/league/plan'
+      preLoaderRoute: typeof DashboardLeaguePlanRouteImport
       parentRoute: typeof DashboardLeagueRoute
     }
     '/dashboard/league/moderators': {
@@ -1186,6 +1224,7 @@ interface DashboardLeagueRouteChildren {
   DashboardLeagueBroadcastRoute: typeof DashboardLeagueBroadcastRoute
   DashboardLeagueMatchesRoute: typeof DashboardLeagueMatchesRoute
   DashboardLeagueModeratorsRoute: typeof DashboardLeagueModeratorsRoute
+  DashboardLeaguePlanRoute: typeof DashboardLeaguePlanRoute
   DashboardLeagueRegisterRoute: typeof DashboardLeagueRegisterRoute
   DashboardLeagueRulesRoute: typeof DashboardLeagueRulesRoute
   DashboardLeagueSettingsRoute: typeof DashboardLeagueSettingsRoute
@@ -1198,6 +1237,7 @@ const DashboardLeagueRouteChildren: DashboardLeagueRouteChildren = {
   DashboardLeagueBroadcastRoute: DashboardLeagueBroadcastRoute,
   DashboardLeagueMatchesRoute: DashboardLeagueMatchesRoute,
   DashboardLeagueModeratorsRoute: DashboardLeagueModeratorsRoute,
+  DashboardLeaguePlanRoute: DashboardLeaguePlanRoute,
   DashboardLeagueRegisterRoute: DashboardLeagueRegisterRoute,
   DashboardLeagueRulesRoute: DashboardLeagueRulesRoute,
   DashboardLeagueSettingsRoute: DashboardLeagueSettingsRoute,
@@ -1311,6 +1351,18 @@ const TeamsRouteChildren: TeamsRouteChildren = {
 
 const TeamsRouteWithChildren = TeamsRoute._addFileChildren(TeamsRouteChildren)
 
+interface RegisterLeagueRouteChildren {
+  RegisterLeagueStartRoute: typeof RegisterLeagueStartRoute
+}
+
+const RegisterLeagueRouteChildren: RegisterLeagueRouteChildren = {
+  RegisterLeagueStartRoute: RegisterLeagueStartRoute,
+}
+
+const RegisterLeagueRouteWithChildren = RegisterLeagueRoute._addFileChildren(
+  RegisterLeagueRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1329,7 +1381,7 @@ const rootRouteChildren: RootRouteChildren = {
   MatchesIdRoute: MatchesIdRoute,
   ModeratorMatchIdRoute: ModeratorMatchIdRoute,
   RefereeMatchIdRoute: RefereeMatchIdRoute,
-  RegisterLeagueRoute: RegisterLeagueRoute,
+  RegisterLeagueRoute: RegisterLeagueRouteWithChildren,
   RegisterPaymentRoute: RegisterPaymentRoute,
   MatchesIndexRoute: MatchesIndexRoute,
 }
