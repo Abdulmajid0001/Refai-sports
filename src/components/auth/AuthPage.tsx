@@ -13,8 +13,11 @@ import { Label } from '@/components/ui/label';
 export function AuthPage() {
   const navigate = useNavigate();
   const invitationToken = new URLSearchParams(window.location.search).get('invite')?.trim() ?? '';
+  const registrationToken = new URLSearchParams(window.location.search).get('registration')?.trim() ?? '';
   const invitationMode = invitationToken.length > 0;
-  const [mode, setMode] = useState<'signup' | 'signin'>(invitationMode ? 'signup' : 'signin');
+  const registrationMode = registrationToken.length > 0;
+  const signupAllowed = invitationMode || registrationMode;
+  const [mode, setMode] = useState<'signup' | 'signin'>(signupAllowed ? 'signup' : 'signin');
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
 
@@ -63,9 +66,9 @@ export function AuthPage() {
             last_name: form.lastName.trim(),
             display_name: displayName,
             phone: form.phone.trim(),
-            // Only a League Owner can choose their own account role.
             role: invitationMode ? 'viewer' : 'league_owner',
             invite_token: invitationMode ? invitationToken : null,
+            registration_token: registrationMode ? registrationToken : null,
           },
         },
       });
@@ -79,7 +82,7 @@ export function AuthPage() {
       }
 
       const invitedRole = await acceptInvitation();
-      toast.success(invitationMode ? 'Invitation accepted.' : 'League Owner account created. Continue onboarding.');
+      toast.success(invitationMode ? 'Invitation accepted.' : 'League Owner account created. Your registration is awaiting approval.');
       navigate({ to: dashboardForRole(invitedRole ?? (invitationMode ? 'viewer' : 'league_owner')) as never });
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
@@ -92,11 +95,13 @@ export function AuthPage() {
     <main className="min-h-screen bg-background">
       <section className="border-b bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-10">
-          <h1 className="text-3xl font-bold">{invitationMode ? 'Accept League Invitation' : 'League Owner Access'}</h1>
+          <h1 className="text-3xl font-bold">{invitationMode ? 'Accept League Invitation' : registrationMode ? 'Complete League Owner Sign Up' : 'Sign In'}</h1>
           <p className="mt-2 max-w-3xl text-muted-foreground">
             {invitationMode
               ? 'Create an account or sign in with the invited email address to receive the role and permissions assigned by the league owner.'
-              : 'Only League Owners can create an account directly. Team owners, officials, staff, sponsors, and viewers must use an invitation issued by a League Owner.'}
+              : registrationMode
+                ? 'Create the League Owner account connected to your payment and registration order. Platform access remains pending until payment verification and Super Admin approval.'
+                : 'League Owner sign up begins with league registration, plan selection, and payment. Team owners, officials, staff, sponsors, and viewers must use a League Owner invitation.'}
           </p>
         </div>
       </section>
@@ -105,18 +110,18 @@ export function AuthPage() {
         <Card className="h-fit">
           <CardHeader><CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" />League Owner Registration</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Create a league, invite teams and operational staff, approve access, activate fixtures, and manage your competition.</p>
-            <p>Everyone else begins with a secure invitation link from a League Owner.</p>
+            <p>Create your registration order, select a subscription, complete payment, then create your League Owner account.</p>
+            {!signupAllowed && <Button type="button" variant="outline" onClick={() => { window.location.href = '/register/league'; }}>Register a league</Button>}
           </CardContent>
         </Card>
 
         <Card className="h-fit">
-          <CardHeader><CardTitle>{invitationMode ? 'Invitation Access' : 'League Owner Sign In'}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{invitationMode ? 'Invitation Access' : registrationMode ? 'Registration Sign Up' : 'Sign In'}</CardTitle></CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={submit}>
               <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-1">
-                <Button type="button" variant={mode === 'signup' ? 'default' : 'ghost'} onClick={() => setMode('signup')}>
-                  {invitationMode ? 'Create account' : 'League Owner sign up'}
+                <Button type="button" variant={mode === 'signup' ? 'default' : 'ghost'} disabled={!signupAllowed} onClick={() => setMode('signup')}>
+                  {invitationMode ? 'Create account' : registrationMode ? 'Create account' : 'Register league'}
                 </Button>
                 <Button type="button" variant={mode === 'signin' ? 'default' : 'ghost'} onClick={() => setMode('signin')}>Sign in</Button>
               </div>
